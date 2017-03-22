@@ -1,12 +1,9 @@
 import os
-import sys
-import mayavi
 from mayavi import mlab
 import numpy as np
 import itertools
-
+from matplotlib import collections
 import matplotlib.pyplot as pyplot
-from matplotlib.patches import Polygon
 
 def unpack_complex_data_2D(complex_list, landmark_coords_data):
 
@@ -218,10 +215,12 @@ def add_filtration_plot_2D(subplot, birth_time, data, color_scheme, alpha):
         birth_time = 0
         while birth_time < current_birth_time:
             color = get_simplex_color(color_scheme, birth_time, current_birth_time, max_birth_time)
-            for simplex_coords_set in complex_data[birth_time]:
-                simplex = Polygon(simplex_coords_set, edgecolor='black', facecolor=color, alpha=alpha)
-                plot.add_patch(simplex)
+            simplexes_coords = complex_data[birth_time]
+            simplexes = collections.PolyCollection(simplexes_coords, edgecolors='black', facecolors=color)
+            plot.add_collection(simplexes)
             birth_time += 1
+
+
 
     subplot.set_aspect('equal')
     # subplot.axis('off')
@@ -280,9 +279,10 @@ def add_filtration_plot_3D(subplot, birth_time, filt_data, color_scheme, alpha, 
 
             birth_time += 1
 
-    #mlab.options.offscreen = True
+    if os.name == 'nt':
+        mlab.options.offscreen = True
     mlab.figure(bgcolor=(1, 1, 1), size=(1000, 1000))
-    mlab.view(azimuth=camera_angle[0], elevation=camera_angle[1],focalpoint=(0,0,0), distance='auto')
+    mlab.view(azimuth=camera_angle[0], elevation=camera_angle[1],focalpoint='auto', distance='auto')
 
     plot_witnesses(filt_data[0])
     plot_landmarks(filt_data[1])

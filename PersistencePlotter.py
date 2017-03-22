@@ -5,6 +5,9 @@ import itertools
 import numpy as np
 from os import system, chdir
 
+from sys import platform
+
+
 def group_by_birth_time(complex_ID_list):
     """Reformats 1D list of SimplexBirth objects into 2D array of
     landmark_set lists, where 2nd index is  birth time (? see below)"""
@@ -102,12 +105,18 @@ def make_figure(title_block_info, out_file_name):
     print 'calling perseus...'
     os.chdir('perseus')
     print 'changed directory...'
-    if os.name == 'nt':     # Windows
-        subprocess.call("perseusWin.exe nmfsimtop perseus_in.txt perseus_out", shell=True)
-    else:                   # Unix
+
+    if platform == "linux" or platform == "linux2":
+        subprocess.call("./perseusLin nmfsimtop perseus_in.txt perseus_out", shell=True)
+
+    elif platform == "darwin":  # macOS
         subprocess.call("./perseusMac nmfsimtop perseus_in.txt perseus_out", shell=True)
-      
-        
+
+    else:   # Windows
+        subprocess.call("perseusWin.exe nmfsimtop perseus_in.txt perseus_out", shell=True)
+
+
+
 
     fig = pyplot.figure(figsize=(8,6), tight_layout=True, dpi=300)
     title_block = pyplot.subplot2grid((3, 4), (0, 0), rowspan=3)
