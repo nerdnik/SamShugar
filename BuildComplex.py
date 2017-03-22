@@ -266,15 +266,15 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	'''=============== End code written by Sam ======================'''
 
 
-	print "--------------"
-	print "Witness ",d[1]
-	print "--------------"
-	print "--------------"
-	print "Witness ",d[50]
-	print "--------------"
-	print "--------------"
-	print "Witness ",d[100]
-	print "--------------"
+	#print "--------------"
+	#print "Witness ",d[1]
+	#print "--------------"
+	#print "--------------"
+	#print "Witness ",d[50]
+	#print "--------------"
+	#print "--------------"
+	#print "Witness ",d[100]
+	#print "--------------"
 
 
 
@@ -352,7 +352,7 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 		
 		for q in xrange(num_divisions):
 			threshold = (max_filtration_param if q == num_divisions - 1 else float(q + 1)*step + min_filtration_param)
-			print 'The threshold is currently %f' % threshold
+			#print 'The threshold is currently %f' % threshold
 			
 			Pre_landmarks = []
 			for witness_index in xrange(number_of_datapoints):

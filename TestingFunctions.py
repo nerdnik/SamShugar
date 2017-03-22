@@ -34,7 +34,7 @@ def frames_to_movie(out_file_name, framerate):
 	if platform == "linux" or platform == "linux2":
 		in_str =     in_str = ('./ffmpegLin -y -framerate %i ' % framerate) + '-i filtration_movie_frames/image%03d.png'
 	else:
-		in_str = ('./ffmpeg -y -framerate %i ' % framerate) + '-i filtration_movie_frames/image%03d.png'
+		in_str = ('ffmpeg -y -framerate %i ' % framerate) + '-i filtration_movie_frames/image%03d.png'
 
 	out_str = (' -r %d ' % 24) + 'output/' + out_file_name
 	os.system(in_str + out_str)
