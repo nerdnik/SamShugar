@@ -34,7 +34,8 @@ old_parameter_set = {
     "connect_time_1_skeleton": False,
     "reentry_filter": False,
     "store_top_simplices": True,
-    "sort_output": False
+    "sort_output": False,
+    "graph_induced": False    # Use graph induced complex to build filtration.
 }
 
 
@@ -238,15 +239,22 @@ if test == 8:
 			framerate=1
     	)
 
-
 if test == 9:
     in_data_file_name = "datasets/L63_x_m2/L63_x_m2_tau10.txt"
     build_filt_params = old_parameter_set
     build_filt_params.update(
         {
-            'ds_rate': 5,
-            'worm_length' : 10,
-            'd_cov': -1
+            'ds_rate': 100,
+            'worm_length' : 10000,
+            'd_cov': -3
         })
     build_and_save_filtration(in_data_file_name,build_filt_params)
+    make_filtration_movie(
+        in_data_file_name,
+        "test9.mp4",
+        build_filt_params,
+        color_scheme='none',
+        max_frames= 50,
+        framerate=1
+    )
 print 'test %d complete.' % test
