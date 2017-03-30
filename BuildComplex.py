@@ -30,6 +30,7 @@ standard_parameter_set = {
 	"d_stretch": 1,
 	"d_ray_distance_amplify": 1,
 	"d_use_hamiltonian": 0,
+	"d_cov":0,
 	"simplex_cutoff": 0,
 	"weak": False,
 	"absolute": False,
@@ -48,7 +49,6 @@ standard_parameter_set = {
 }
 
 def build_filtration(input_file_name, parameter_set = None, **overrides):
-	print 'Hello again'
 	num_threads = 2
 	d = [] #this is where distance to all landmarks for each witness goes.  It is a list of'
 
@@ -70,10 +70,10 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	use_hamiltonian = float(get_param("d_use_hamiltonian"))
 	m2_d = float(get_param("m2_d"))
 	straight_VB = float(get_param("straight_VB"))
-	always_euclidean = speed_amplify == orientation_amplify == stretch == ray_distance_amplify == 1.0 and use_hamiltonian == 0.0
+	d_cov = get_param("d_cov")
+	always_euclidean = speed_amplify == orientation_amplify == stretch == ray_distance_amplify == 1.0 and use_hamiltonian == d_cov==0.
 	
-	print 'Is m2_d on: %f' % m2_d
-	print 'Is straight_VB on : %f' % straight_VB
+	
 
 	filtration = Set()
 	extra_data = None	
@@ -92,11 +92,6 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	simplex_cutoff = get_param("simplex_cutoff")
 
 
-
-
-
-
-	
 	'''=============== This code written by Sam ======================'''
 
 	## Read data into witness and landmark lists.
@@ -152,10 +147,10 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-v {}".format(straight_VB),
 			"-s {}".format(stretch),
 			"-e {}".format(downsample_rate),
+			"-x {}".format(d_cov),
 			"-c"
 			])	
 		else:
-			
 			subprocess.call([
 			"./find_landmarks","-q",
 			"-n {}".format(num_threads),
@@ -170,6 +165,7 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-r {}".format(ray_distance_amplify),
 			"-v {}".format(straight_VB),
 			"-s {}".format(stretch),
+			"-x {}".format(d_cov),
 			"-e {}".format(downsample_rate)
 			])	
 	else:
@@ -188,6 +184,7 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-h {}".format(use_hamiltonian),
 			"-r {}".format(ray_distance_amplify),
 			"-v {}".format(straight_VB),
+			"-x {}".format(d_cov),
 			"-s {}".format(stretch)
 			])
 		elif always_euclidean:
@@ -204,11 +201,25 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-h {}".format(use_hamiltonian),
 			"-r {}".format(ray_distance_amplify),
 			"-v {}".format(straight_VB),
+			"-x {}".format(d_cov),
 			"-s {}".format(stretch),
 			"-c"
 			])
 		else:
-			
+			print ["./find_landmarks","-q","-n {}".format(num_threads),
+			"-l {}".format(number_of_vertices),
+			"-w {}-{}".format(start,stop),
+			"-i{}".format(input_file_name),
+			"-olandmark_outputs.txt",
+			"-m {}".format(int(m2_d)),
+			"-a {}".format(speed_amplify),
+			"-y {}".format(orientation_amplify),
+			"-h {}".format(use_hamiltonian),
+			"-r {}".format(ray_distance_amplify),
+			"-v {}".format(straight_VB),
+			"-x {}".format(d_cov),
+			"-s {}".format(stretch)]
+
 			subprocess.call([
 			"./find_landmarks","-q","-n {}".format(num_threads),
 			"-l {}".format(number_of_vertices),
@@ -221,13 +232,14 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-h {}".format(use_hamiltonian),
 			"-r {}".format(ray_distance_amplify),
 			"-v {}".format(straight_VB),
+			"-x {}".format(d_cov),
 			"-s {}".format(stretch)
 			])
 			
 			
 	## Build and sort distance matrix.
 	landmarks_file = open("landmark_outputs.txt","rb")
-	print 'Hello 3'
+	
 	l = landmarks_file.readlines()	
 	sys.stdout.write("Reading in distance calculations...")
 	sys.stdout.flush()

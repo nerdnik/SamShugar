@@ -239,7 +239,14 @@ if test == 8:
     	)
 
 
-        
-
-
+if test == 9:
+    in_data_file_name = "datasets/L63_x_m2/L63_x_m2_tau10.txt"
+    build_filt_params = old_parameter_set
+    build_filt_params.update(
+        {
+            'ds_rate': 5,
+            'worm_length' : 10,
+            'd_cov': -1
+        })
+    build_and_save_filtration(in_data_file_name,build_filt_params)
 print 'test %d complete.' % test
