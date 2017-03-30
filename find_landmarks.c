@@ -370,6 +370,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 		else{//not timing
 			printf("Running distance calculations 2..."); //euclidean
 			fflush(stdout);
+
 			#pragma omp parallel num_threads(num_threads) shared(distances,witnesses,num_wits,wit_pts) private(i,j,x,y)
 			{
 				#pragma omp for nowait schedule (runtime)
@@ -389,6 +390,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 	}
 	else{
 		printf("Calculating euclidean distances...");
+		fflush(stdout);
 		#pragma omp parallel num_threads(num_threads) shared(euc_distance,witnesses,num_wits,wit_pts) private(i,j)
 		{
 			#pragma omp for nowait schedule (runtime)
@@ -398,7 +400,8 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 				}
 			}	
 		}
-
+		printf("done\n");
+		fflush(stdout);
 	}
 
 
@@ -454,9 +457,15 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 			
 	}
 	else if(d_cov!=0){
+		
 		printf("Running distance calculations 5..."); // covariance
+		fflush(stdout);
+
+
 		if(d_cov<0){//distance from mean of k nearest neighbors to k nearest neighbors
+
 			d_cov*=-1;
+
 			int neighbors[d_cov];
 			float ndist[d_cov];
 			
@@ -529,6 +538,9 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 					found = 0;
 					closest[0]=0;
 					closest[1]=0;
+					for(j=0;j<d_cov;j++){
+						neighbors[j] = -1;
+					}
 
 					//find nearest neighbors
 					while(found<d_cov){
@@ -552,9 +564,10 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 							min_index = neighbors[j];
 						}
 					}
-					closest[0]=witnesses[neighbors[min_index]*wit_pts];
-					closest[1]=witnesses[neighbors[min_index]*wit_pts+1];
-					
+
+					closest[0]=witnesses[min_index*wit_pts];
+					closest[1]=witnesses[min_index*wit_pts+1];
+	
 					for(j=0;j<wit_pts;j++){
 						for(k=0;k<wit_pts;k++){
 							sum = 0;
@@ -564,6 +577,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 							cov_matrices[(i*wit_pts*wit_pts)+j*wit_pts+k] = sum/((float)d_cov-1);
 						}
 					}
+
 				}
 			}
 		}
@@ -731,11 +745,6 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 		}
 		fclose(fp);
 
-
-
-
-
-
 		fp = fopen("edgelist.txt","w");
 		if (fp == NULL) {
     		printf("\n\n\t\t ERROR: Failed to open output file %s!\n",wfile);
@@ -760,18 +769,6 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 		}
 		fclose(fp);
 	}
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /************* Writing landmarks distances to file ****************/
