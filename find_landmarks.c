@@ -65,6 +65,7 @@ float            orientation_amplify = 1.0;
 float            ray_distance_amplify = 1.0;
 float            straight_VB=0.0;
 float            stretch = 1.0;
+float            max_filtration_param = 0.0;
 
 
 char            *file;
@@ -75,14 +76,13 @@ FILE            *fp;
 
 int64_t          num_wits=1;
 int64_t          i,j,k;
-int              knn = 7;  //k nearest neighbors
 int              m2_d = 0.0;
 int              num_landmarks=1;
 int              t,l;
 int              est;
 int              start=0;
 int              stop=1;
-int              num_threads = 4;
+int              num_threads = 2;
 int              d_cov = 0;
 
 int              max_avg=50;
@@ -113,23 +113,24 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 
   struct poptOption optionsTable[] =
   { 
-    { "input file",                'i', POPT_ARG_STRING,     &file,                1, "Input file of witnesses",                                              0 },
-    { "output file",               'o', POPT_ARG_STRING,     &wfile,               2, "Where to output landmarks and their distances to each witness.",       0 },
-    { "landmarks",                 'l', POPT_ARG_INT,        &num_landmarks,       3, "Number of landmarks to use.",                                          0 },
-    { "witnesses",                 'w', POPT_ARG_STRING,     &parse,               4, "Number of witnesses to use.  Can be an integer or a range of integers like x-y",      0 },
-    { "evenly spaced in time",     'e', POPT_ARG_INT,        &est,                 5, "Use evenly spaced in time to select every x landmark.",                0 },
-    { "time program",              't', POPT_ARG_NONE,       0,                    6, "Time each step of the code and output results.",                       0 },
-    { "print everything",          'q', POPT_ARG_NONE,       0,                    7, "Print all output.  Use for debugging.",                                0 },
-    { "set speed amplify",         'a', POPT_ARG_FLOAT,      &speed_amplify,       8, "Set the speed amplify variable.",                                      0 },
-    { "set orientation amplify",   'y', POPT_ARG_FLOAT,      &orientation_amplify, 9, "Set the orientation amplify variable.",                                0 },
-    { "set use hamiltonian",       'h', POPT_ARG_FLOAT,      &use_hamiltonian,    10, "Set the use hamiltonian variable.",                                    0 },
-    { "set m2_d",                  'm', POPT_ARG_INT,        &m2_d,               11, "Set the m2_d variable.",                                               0 },
-    { "set ray dist amplify",      'r', POPT_ARG_FLOAT,      &speed_amplify,      12, "Set the ray distance amplify variable.",                               0 },
-    { "number of threads",         'n', POPT_ARG_INT,        &num_threads,        13, "Set the number of threads to use.",                                    0 },
-    { "set straight_VB",           'v', POPT_ARG_FLOAT,      &straight_VB,        14, "Set the straight_VB variable.",                                        0 },
-    { "set stretch ",              's', POPT_ARG_FLOAT,      &stretch,            15, "Set the stretch variable.",                                            0 },
-    { "use euclidean ",            'c', POPT_ARG_NONE,       0,                   16, "Calculate distance using euclidean distance.",                         0 },
-    { "cov",                       'x', POPT_ARG_INT,        &d_cov,              17, "Calculate distance using covariance.",                                 0 },
+    { "input file",                'i', POPT_ARG_STRING,     &file,                         1, "Input file of witnesses",                                              0 },
+    { "output file",               'o', POPT_ARG_STRING,     &wfile,                        2, "Where to output landmarks and their distances to each witness.",       0 },
+    { "landmarks",                 'l', POPT_ARG_INT,        &num_landmarks,                3, "Number of landmarks to use.",                                          0 },
+    { "witnesses",                 'w', POPT_ARG_STRING,     &parse,                        4, "Number of witnesses to use.  Can be an integer or a range of integers like x-y",      0 },
+    { "evenly spaced in time",     'e', POPT_ARG_INT,        &est,                          5, "Use evenly spaced in time to select every x landmark.",                0 },
+    { "time program",              't', POPT_ARG_NONE,       0,                             6, "Time each step of the code and output results.",                       0 },
+    { "print everything",          'q', POPT_ARG_NONE,       0,                             7, "Print all output.  Use for debugging.",                                0 },
+    { "set speed amplify",         'a', POPT_ARG_FLOAT,      &speed_amplify,                8, "Set the speed amplify variable.",                                      0 },
+    { "set orientation amplify",   'y', POPT_ARG_FLOAT,      &orientation_amplify,          9, "Set the orientation amplify variable.",                                0 },
+    { "set use hamiltonian",       'h', POPT_ARG_FLOAT,      &use_hamiltonian,             10, "Set the use hamiltonian variable.",                                    0 },
+    { "set m2_d",                  'm', POPT_ARG_INT,        &m2_d,                        11, "Set the m2_d variable.",                                               0 },
+    { "set ray dist amplify",      'r', POPT_ARG_FLOAT,      &speed_amplify,               12, "Set the ray distance amplify variable.",                               0 },
+    { "number of threads",         'n', POPT_ARG_INT,        &num_threads,                 13, "Set the number of threads to use.",                                    0 },
+    { "set straight_VB",           'v', POPT_ARG_FLOAT,      &straight_VB,                 14, "Set the straight_VB variable.",                                        0 },
+    { "set stretch ",              's', POPT_ARG_FLOAT,      &stretch,                     15, "Set the stretch variable.",                                            0 },
+    { "use euclidean ",            'c', POPT_ARG_NONE,       0,                            16, "Calculate distance using euclidean distance.",                         0 },
+    { "cov",                       'x', POPT_ARG_INT,        &d_cov,                       17, "Calculate distance using covariance.",                                 0 },
+    { "output edgelist",           'f', POPT_ARG_FLOAT,      &max_filtration_param,        18, "Output edgelist for graph induced complex.",                           0 },
     POPT_AUTOHELP
     { NULL, '\0', 0, NULL, 0}
   };
@@ -144,15 +145,18 @@ poptContext POPT_Context;  /* context for parsing command-line options */
         if(!quiet)
         	printf("Input file:%s\n",file);
         break;
+
       case 2:
       	if(!quiet)
         	printf("Output file:%s\n",wfile);
         break;
+
       case 3:
       	if(!quiet)
         	printf("Number of landmarks set to %d.\n",num_landmarks);
         	fflush(stdout);
         break;
+
       case 4:
         if(strchr(parse,'-')!=NULL){
         	parse=strtok(parse,"-");
@@ -172,33 +176,47 @@ poptContext POPT_Context;  /* context for parsing command-line options */
             stop = atoi(parse);
         }
 				
-				num_wits = stop-start;
-				printf("Number of witnesses: %d\n",num_wits);
-				fflush(stdout);
-				break;
+		num_wits = stop-start;
+		if(!quiet){
+			printf("Number of witnesses: %d\n",num_wits);
+			fflush(stdout);
+		}
+		break;
+
       case 5:
       	use_est=true;
       	if(!quiet)
       	printf("Using evenly spaced in time to find landmarks.\n");
 		break;
+
       case 6:
       	if(!quiet)
       		printf("Timing selection processes.\n");
 		timing = true;
 		break;
+
 	  case 7:
 	  	quiet = false;
 	  	break;
+
 	  case 13:
 	  	printf("Number of threads: %d\n",num_threads);
 	  	break;
+
 	  case 16:
 	  	if(!quiet)
 	  		printf("Using euclidean distance.\n");
 	  	use_euclidean = true;
 	  	break;
+
 	  case 17:
-	  	printf("Calculating distance with covariance matrix.\n");
+	   	if(!quiet)
+	  		printf("Calculating distance with covariance matrix.\n");
+	  	break;
+	  case 18:
+	   	if(!quiet)
+	  		printf("Outputting edgelist for graph induced complex.\n");
+	  	break;
     }
   }
   if (POPT_Ret < -1) 
@@ -370,7 +388,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 
 	}
 	else{
-
+		printf("Calculating euclidean distances...");
 		#pragma omp parallel num_threads(num_threads) shared(euc_distance,witnesses,num_wits,wit_pts) private(i,j)
 		{
 			#pragma omp for nowait schedule (runtime)
@@ -380,6 +398,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 				}
 			}	
 		}
+
 	}
 
 
@@ -435,7 +454,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 			
 	}
 	else if(d_cov!=0){
-		printf("Running distance calculations 5...\n"); // covariance
+		printf("Running distance calculations 5..."); // covariance
 		if(d_cov<0){//distance from mean of k nearest neighbors to k nearest neighbors
 			d_cov*=-1;
 			int neighbors[d_cov];
@@ -476,10 +495,6 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 					}
 					mean[0]=mean[0]/(float)d_cov;
 					mean[1]=mean[1]/(float)d_cov;
-					
-					
-					
-					//calculate covariance matrix
 					
 					for(j=0;j<wit_pts;j++){
 						for(k=0;k<wit_pts;k++){
@@ -540,10 +555,6 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 					closest[0]=witnesses[neighbors[min_index]*wit_pts];
 					closest[1]=witnesses[neighbors[min_index]*wit_pts+1];
 					
-					
-					
-					//calculate covariance matrix
-					
 					for(j=0;j<wit_pts;j++){
 						for(k=0;k<wit_pts;k++){
 							sum = 0;
@@ -558,8 +569,6 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 		}
 
 
-		//now calculate distance using covariance d(w_i,w_j) = [w_i]*cov(w_i)*[w_j]
-
 		float c0,c1;
 		#pragma omp parallel num_threads(num_threads) shared(distances,cov_matrices,witnesses,wit_pts,num_wits) private(i,j,c0,c1)
 		{
@@ -569,12 +578,14 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 					c0 = witnesses[i*wit_pts] - witnesses[j*wit_pts];
 					c1 = witnesses[i*wit_pts+1] - witnesses[j*wit_pts+1];
 					distances[i*num_wits+j] = c0*c0*cov_matrices[(i*wit_pts*wit_pts)] + c0*c1+cov_matrices[(i*wit_pts*wit_pts)+1] + c0*c1+cov_matrices[(i*wit_pts*wit_pts)+2] + c1*c1+cov_matrices[(i*wit_pts*wit_pts)+3];
+					if(distances[i*num_wits+j]<0)
+						distances[i*num_wits+j]*=-1;
 				}
 			}
 		}
 
 	}
-	
+
 	else if(orientation_amplify!=1){
 		float de,dot;
 		printf("Running distance calculations 6..."); //orientation
@@ -672,6 +683,95 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 		printf("done\n");
 	}
 /******************************************************************/
+
+	// output list of closest witnesses to a landmark for graph induced complex
+	if(max_filtration_param!=0){
+		
+		int *closest = (int*) calloc(num_wits*2,sizeof(int));
+		
+		int min_index = -1;
+		float min = 888888;
+		if(!quiet){
+			printf("Finding closest landmark to witnesses...");
+			fflush(stdout);
+		}
+		#pragma omp parallel shared(euc_distance,closest,landmarks,num_landmarks,num_wits) private(i,j,l,min,min_index)
+		{
+			#pragma omp for nowait schedule(runtime)
+			for(i=0;i<num_wits;i++){
+				min_index = -1;
+				min = 888888;
+				for(j=0;j<num_landmarks;j++){
+					l = landmarks[j];
+					if(euc_distance[i*num_wits+j]<min && i!=j){
+						min = euc_distance[i*num_wits+l];
+						min_index = l;
+					}
+				}
+				closest[i*2] = i;
+				closest[i*2+1] = min_index;
+			}
+		}
+		if(!quiet){
+			printf("done\n");
+			fflush(stdout);
+		}
+
+
+		fp = fopen("closest_wits.txt","w");
+		if (fp == NULL) {
+    		printf("\n\n\t\t ERROR: Failed to open output file %s!\n",wfile);
+    		fflush(stdout);
+    		return 1;
+		}
+
+		fprintf(fp,"#witness closest_landmark\n");
+		for(i=0;i<num_wits;i++){
+			fprintf(fp,"%d %d\n",i,closest[i*2+1]);
+		}
+		fclose(fp);
+
+
+
+
+
+
+		fp = fopen("edgelist.txt","w");
+		if (fp == NULL) {
+    		printf("\n\n\t\t ERROR: Failed to open output file %s!\n",wfile);
+    		fflush(stdout);
+    		return 1;
+		}
+		if(!quiet){
+			printf("Finding edges for graph induced complex...");
+			fflush(stdout);
+		}
+
+		fprintf(fp,"# edgelist for graph induced complex.\n");
+		for(i=0;i<num_wits;i++){
+			for(j=0;j<num_wits;j++){
+				if(euc_distance[i*num_wits+j]<=max_filtration_param && closest[i*2+1]!=closest[j*2+1])
+					fprintf(fp,"%d %d {\'weight\' : %f}\n",i,j,euc_distance[i*num_wits+j]);
+			}
+		}
+		if(!quiet){
+			printf("done\n");
+			fflush(stdout);
+		}
+		fclose(fp);
+	}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /************* Writing landmarks distances to file ****************/
