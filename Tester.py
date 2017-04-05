@@ -44,12 +44,13 @@ if test == 1:
     build_filt_params = old_parameter_set
     build_filt_params.update(
         {
-            'ds_rate' : 50,
+            'ds_rate' : 60,
             'worm_length' : 10000,
-            'max_filtration_param': -10
+            'max_filtration_param': -10,
+            'd_cov': 20
         })
 
-    start_pt = .5   # skip first half of in data file (primitive sliding window)
+    start_pt = 0   # skip first half of in data file (primitive sliding window)
     build_and_save_filtration(in_data_file_name, build_filt_params, start=start_pt) # comment out to reuse filtration
 
     make_filtration_movie(
