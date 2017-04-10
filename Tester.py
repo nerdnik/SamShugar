@@ -1,7 +1,7 @@
 import sys
 from TestingFunctions import build_and_save_filtration, make_filtration_movie,make_persistence_diagram
 
-# test = 0
+# test = 1
 test = int(sys.argv[1])
 
 
@@ -47,11 +47,11 @@ if test == 1:
             'ds_rate' : 60,
             'worm_length' : 10000,
             'max_filtration_param': -10,
-            'd_cov': 20
+            'd_cov': 20,
         })
 
     start_pt = 0   # skip first half of in data file (primitive sliding window)
-    build_and_save_filtration(in_data_file_name, build_filt_params, start=start_pt) # comment out to reuse filtration
+    # build_and_save_filtration(in_data_file_name, build_filt_params, start=start_pt) # comment out to reuse filtration
 
     make_filtration_movie(
         in_data_file_name,              # used to check if saved filtration is up to date, and in titlebox
@@ -259,3 +259,31 @@ if test == 9:
         framerate=1
     )
 print 'test %d complete.' % test
+
+if test == 10:
+    in_data_file_name = "datasets/L63_x_m2/L63_x_m2_tau7.txt"
+    build_filt_params = old_parameter_set
+    build_filt_params.update(
+        {
+            'ds_rate' : 60,
+            'worm_length' : 10000,
+            'max_filtration_param': -10,
+            'num_divisions' : 30
+        })
+
+    start_pt = 0   # skip first half of in data file (primitive sliding window)
+    build_and_save_filtration(in_data_file_name, build_filt_params, start=start_pt) # comment out to reuse filtration
+
+    make_filtration_movie(
+        in_data_file_name,
+        "L63_x_m2_tau7_movie.mp4",
+        build_filt_params,
+        color_scheme='highlight new',
+        framerate=1,
+    )
+
+    make_persistence_diagram(
+        in_data_file_name,
+        "L63_x_m2_tau7_persistence.png",
+        build_filt_params
+    )

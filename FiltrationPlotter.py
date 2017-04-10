@@ -1,9 +1,18 @@
 import os
+import sys
+import subprocess
 from mayavi import mlab
 import numpy as np
 import itertools
+
+
+
 from matplotlib import collections
 import matplotlib.pyplot as pyplot
+import matplotlib.markers
+
+from matplotlib import animation
+
 
 def unpack_complex_data_2D(complex_list, landmark_coords_data):
 
@@ -133,7 +142,7 @@ def load_data():
     return ambient_dim, [witness_data, landmark_data, complex_data]
 
 def remove_old_frames():
-    os.chdir('filtration_movie_frames')
+    os.chdir('frames')
     for f in os.listdir("."):
         if f.endswith(".png"):
             os.remove(f)
@@ -150,38 +159,46 @@ def add_title(subplot, title_block_info, i):
     max_frames = title_block_info[7]
     hide_1simplexes = title_block_info[8]
 
-    # subplot.axis('tight')
+    subplot.axis('tight')
     subplot.axis('off')
-    # subplot.xaxis.set_ticks([])
-    # subplot.yaxis.set_ticks([])
+    # subplot.set_xticks([])
     subplot.set_xlim([0,1])
     subplot.set_ylim([0,1])
 
+    row_height = .025
+    font_size = 6
+
     title_table = subplot.table(
         cellText = [[in_file_name.split('/')[-1]],   # remove leading "datasets/"
-                    [out_file_name],
-                    ["color scheme:" + str(color_scheme) + ", alpha: " + str(alpha)]],
-        bbox=[0, .9, 1, .1],    # x0, y0, width, height
-        fontsize=8,
+                    [out_file_name]],
+        bbox=[0, .9, 1, .05 * 2],    # x0, y0, width, height
+        cellLoc='center'
     )
+    title_table.auto_set_font_size(False)
+    title_table.set_fontsize(8)
 
-    time_box = subplot.table(
-        cellText= [['time', '%d' % i]],
-        bbox=[.5, .825, .5, .05])    # x0, y0, width, height
-    # time_box.auto_set_font_size(False)
-    # time_box.set_fontsize(6)
+    # moved to update_time_table() #
+
+    # time_table = subplot.table(
+    #     cellText= [['time', '%d' % i]],
+    #     bbox=[.25, .9, .5, row_height],    # x0, y0, width, height
+    #     animated=True,
+    # )
+    # time_table.auto_set_font_size(False)
+    # time_table.set_fontsize(8)
 
     param_data = np.array([[key, parameter_set[key]] for key in parameter_set.keys()])
+    num_rows = len(param_data)
+    h = num_rows * row_height
     param_table = subplot.table(
         cellText=param_data,
-        colLabels=('PARAM', 'VALUE'),
-        colColours=(['c', 'c']),
         colWidths=[1.5, .5],
-        bbox=[0, 0, 1, .8], # x0, y0, width, height
+        bbox=[0, 0, 1, h], # x0, y0, width, height
     )
     param_table.auto_set_font_size(False)
     param_table.set_fontsize(6)
 
+    return title_table, param_table   # for init()
 
 def get_simplex_color(scheme, birth_time, current_birth_time, max_birth_time):
     """helper for plot_complex()"""
@@ -196,46 +213,8 @@ def get_simplex_color(scheme, birth_time, current_birth_time, max_birth_time):
         print 'error:', scheme, 'is not a valid color scheme'
     return color
 
-def add_filtration_plot_2D(subplot, birth_time, data, color_scheme, alpha):
-    def plot_witnesses(plot, attractor_data):
-        attractor_data = np.array(attractor_data)
-        x = attractor_data[:, 0]
-        y = attractor_data[:, 1]
-        plot.scatter(x, y, color='black', s=1, zorder=1)
 
-    def plot_landmarks(plot, landmark_data):
-        landmark_data = np.array(landmark_data)
-        x = landmark_data[:, 0]
-        y = landmark_data[:, 1]
-        plot.scatter(x, y, color='green', zorder=2)
-
-    def plot_complex(plot, complex_data, current_birth_time):
-        """plots all simplices with birth time =< current_birth_time"""
-        max_birth_time = len(complex_data) - 1
-        birth_time = 0
-        while birth_time < current_birth_time:
-            color = get_simplex_color(color_scheme, birth_time, current_birth_time, max_birth_time)
-            simplexes_coords = complex_data[birth_time]
-            simplexes = collections.PolyCollection(simplexes_coords, edgecolors='black', facecolors=color)
-            plot.add_collection(simplexes)
-            birth_time += 1
-
-
-
-    subplot.set_aspect('equal')
-    # subplot.axis('off')
-    subplot.xaxis.set_ticks([])
-    subplot.yaxis.set_ticks([])
-
-    witness_data = data[0]
-    landmark_data = data[1]
-    complex_data = data[2]
-
-    plot_witnesses(subplot, witness_data)
-    plot_landmarks(subplot, landmark_data)
-    plot_complex(subplot, complex_data, birth_time)
-
-def add_filtration_plot_3D(subplot, birth_time, filt_data, color_scheme, alpha, camera_angle, hide_1simplexes):
+def make_frames_3D(subplot, birth_time, filt_data, color_scheme, alpha, camera_angle, hide_1simplexes):
 
     def plot_witnesses(witness_data):
         x = witness_data[:, 0]
@@ -279,7 +258,7 @@ def add_filtration_plot_3D(subplot, birth_time, filt_data, color_scheme, alpha, 
 
             birth_time += 1
 
-    if os.name == 'nt':
+    if sys.platform == 'win32':
         mlab.options.offscreen = True
     mlab.figure(bgcolor=(1, 1, 1), size=(1000, 1000))
     mlab.view(azimuth=camera_angle[0], elevation=camera_angle[1],focalpoint='auto', distance='auto')
@@ -293,39 +272,125 @@ def add_filtration_plot_3D(subplot, birth_time, filt_data, color_scheme, alpha, 
     subplot.imshow(filt_plot, aspect='auto')
     subplot.xaxis.set_ticks([])
     subplot.yaxis.set_ticks([])
-    mlab.clf()
+    mlab.close()
 
-def make_movie_frames(title_block_info, color_scheme, alpha, dpi, camera_angle, max_frames, hide_1simplexes):
+def make_frames_2D(filt_data, title_block_info, color_scheme, alpha, framerate):
+    def plot_witnesses(subplot, attractor_data):
+        attractor_data = np.array(attractor_data)
+        x = attractor_data[:, 0]
+        y = attractor_data[:, 1]
+        return subplot.scatter(x, y, color='black', marker=matplotlib.markers.MarkerStyle(marker='o', fillstyle='full'), facecolor='black', s=.1, zorder=0)
+
+    def plot_landmarks(subplot, landmark_data):
+        landmark_data = np.array(landmark_data)
+        x = landmark_data[:, 0]
+        y = landmark_data[:, 1]
+        return subplot.scatter(x, y, color='b', s=3)
+
+    def plot_complex(subplot, complex_data, alpha):
+        """plots all complexes for full filtration"""
+        patches = []
+        for simplexes_coords in complex_data:
+            simplexes = collections.PolyCollection(simplexes_coords, edgecolors='black', facecolors='lightblue', lw=.5, alpha=alpha, animated=True, antialiased=True)
+            simplexes.set_visible(False)
+            patches.append(subplot.add_collection(simplexes))
+        return patches
+
+    def show_complex(filt_plot, i):
+        poly_colls = filt_plot.collections[2:]
+        coll = poly_colls[i]
+        coll.set_visible(True)
+
+        if color_scheme == 'highlight new':
+            coll.set_facecolor('red')
+            if i > 0:
+                prev_coll = poly_colls[i - 1]
+                prev_coll.set_facecolor('lightblue')
+                return prev_coll, coll
+
+        return coll,
+
+    def update_time_table(time_plot, i):
+
+        time_table = time_plot.table(
+            cellText= [['time', '%d' % i]],
+            bbox=[.375, .8, .25, .05],    # x0, y0, width, height
+            colWidths=[1, .5],
+            cellLoc = 'center',
+
+            animated=True,
+        )
+        time_table.auto_set_font_size(False)
+        time_table.set_fontsize(8)
+
+        return time_table,
+
+
+    filt_data[2] = unpack_complex_data_2D(filt_data[2], filt_data[1])
+
+    title_block = pyplot.subplot2grid((3, 4), (0, 0), rowspan=3, colspan=1)
+    add_title(title_block, title_block_info, 0)
+
+    filt_plot = pyplot.subplot2grid((3, 4), (0, 1), rowspan=3, colspan=3)
+    filt_plot.set_aspect('equal')
+
+    witness_data = filt_data[0]
+    landmark_data = filt_data[1]
+    complex_data = filt_data[2]
+
+    def init():
+        print 'initializing...'
+        # title = add_title(title_block, title_block_info, 0)
+        complexes = plot_complex(filt_plot, complex_data, alpha)
+        witnesses = plot_witnesses(filt_plot, witness_data)
+        landmarks = plot_landmarks(filt_plot, landmark_data)
+        ret_list = [witnesses, landmarks]
+        ret_list.extend(complexes)
+        # ret_list.extend(title)
+        return ret_list
+
+    def animate(i):
+        print 'frame', i
+        ret_comp = show_complex(filt_plot, i)
+        ret_title = update_time_table(title_block, i)
+        ret_list = list(ret_comp)
+        ret_list.extend(ret_title)
+        # pyplot.savefig('frames/image%03d.png' % i)    # for debugging
+
+        return ret_list
+
+
+    return init, animate
+
+
+def make_movie(out_file_name, title_block_info, color_scheme, alpha, dpi, framerate, camera_angle, hide_1simplexes):
 
     remove_old_frames()
-
-    print 'loading filtration arrays...'
     ambient_dim, filt_data = load_data()
+    fig = pyplot.figure(figsize=(9, 6), tight_layout=True, dpi=dpi)
+
     if ambient_dim == 2:
-        filt_data[2] = unpack_complex_data_2D(filt_data[2], filt_data[1])
+        init, animate = make_frames_2D(filt_data, title_block_info, color_scheme, alpha, framerate)
+
     elif ambient_dim == 3:
-        filt_data[2] = unpack_complex_data_3D(filt_data[2])
-    print 'ambient dimension: %d' % ambient_dim
+        print "ERROR: 3D filtration is not supported at this time"
 
-    print 'plotting filtration...'
-    if not max_frames: max_frames = len(filt_data[2])
-    for i in xrange(max_frames):
-        print 'frame %d of %d' % (i + 1, max_frames)
-        fig = pyplot.figure(figsize=(8, 6), tight_layout=True, dpi=dpi)
-        # print fig.properties()
+    else:
+        print "ERROR: ambient_dim = {:d}. Check input filtration file."
+        sys.exit()
 
-        title_block = pyplot.subplot2grid((3, 4), (0, 0), rowspan=3)
-        filt_plot = pyplot.subplot2grid((3, 4), (0, 1), rowspan=3, colspan=3)
 
-        add_title(title_block, title_block_info, i)
-        if ambient_dim == 2:
-            add_filtration_plot_2D(filt_plot, i, filt_data, color_scheme, alpha)
-        elif ambient_dim == 3:
-            add_filtration_plot_3D(filt_plot, i, filt_data, color_scheme, alpha, camera_angle, hide_1simplexes)
+    ani = animation.FuncAnimation(fig, animate, init_func=init, frames=len(filt_data[2]), blit=True, repeat=False)
 
-        img_name = 'filtration_movie_frames/image%03d.png' % i
-        pyplot.savefig(img_name, dpi=dpi)
-        pyplot.close(fig)
+    ani.save('output/temp.mp4', fps=10)
+
+    os.chdir('output')
+
+    subprocess.call(['ffmpeg', '-y', '-i', 'temp.mp4', '-filter:v', 'setpts={:d}*PTS'.format(int(10 / framerate)), out_file_name])
+    subprocess.call(['rm', 'temp.mp4'])
+
+    os.chdir('..')
+
 
 
 if __name__ == '__main__':

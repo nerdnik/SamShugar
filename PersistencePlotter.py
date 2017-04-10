@@ -83,17 +83,29 @@ def add_title(subplot, title_block_info):
         fontsize=8,
     )
 
-def add_persistence_plot(subplot):
+def add_persistence_plot(subplot, num_div):
     print 'plotting persistence diagram...'
     birth_t, death_t = np.loadtxt('perseus_out_1.txt', unpack=True)
-    lim = int(np.ceil(1.1 * np.amax(death_t)))
+    lim = num_div + 1
+
+    immortal_holes = [birth_t[i] for i, death_time in enumerate(death_t) if death_time == -1]
     subplot.set_aspect('equal')
+
     subplot.set_xlim(0, lim)
     subplot.set_ylim(0, lim)
+
     subplot.set_xlabel('birth time')
     subplot.set_ylabel('death time')
-    subplot.plot([0, lim], [0, lim], color='k')
-    subplot.scatter(birth_t, death_t)
+
+
+    subplot.plot([0, lim], [0, lim], color='k') # diagonal line
+    for bt in immortal_holes:
+        # subplot.plot((bt, bt), (bt, lim), '--', color='k', lw=1, zorder=0)    # immortal holes
+        subplot.plot(bt, lim, 'x', color='b', markersize=10)
+
+
+    subplot.scatter(birth_t, death_t)   # doomed holes
+
 
 def make_figure(title_block_info, out_file_name):
     filt_list = np.load('filtration_data/complexes.npy')
@@ -101,10 +113,10 @@ def make_figure(title_block_info, out_file_name):
     expand_to_2simplexes(filt_array)
     filt_array = np.asarray(filt_array)
 
+
     build_perseus_in_file(filt_array)
     print 'calling perseus...'
     os.chdir('perseus')
-    print 'changed directory...'
 
     if platform == "linux" or platform == "linux2":
         subprocess.call("./perseusLin nmfsimtop perseus_in.txt perseus_out", shell=True)
@@ -121,7 +133,10 @@ def make_figure(title_block_info, out_file_name):
     fig = pyplot.figure(figsize=(8,6), tight_layout=True, dpi=300)
     title_block = pyplot.subplot2grid((3, 4), (0, 0), rowspan=3)
     pers_plot = pyplot.subplot2grid((3, 4), (0, 1), rowspan=3, colspan=3)
-    add_persistence_plot(pers_plot)
+
+    num_divisions = len(filt_array)
+
+    add_persistence_plot(pers_plot, num_divisions)
     add_title(title_block, title_block_info)
     os.chdir('..')
     pyplot.savefig('output/' + out_file_name)
