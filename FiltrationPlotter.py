@@ -148,6 +148,20 @@ def remove_old_frames():
             os.remove(f)
     os.chdir('..')
 
+def get_simplex_color(scheme, birth_time, current_birth_time, max_birth_time):
+    """helper for plot_complex()"""
+    if scheme == 'none':
+        color = (.4, .6, .8)
+    elif scheme == 'highlight new':
+        color = (1, 0, 0) if birth_time == current_birth_time - 1 else (0, 0, 1)
+    elif scheme == 'birth_time gradient':
+        prog = birth_time / float(max_birth_time)
+        color = (0, prog, 1 - prog)
+    else:
+        print 'error:', scheme, 'is not a valid color scheme'
+    return color
+
+
 def add_title(subplot, title_block_info, i):
     in_file_name = title_block_info[0]
     out_file_name = title_block_info[1]
@@ -177,16 +191,6 @@ def add_title(subplot, title_block_info, i):
     title_table.auto_set_font_size(False)
     title_table.set_fontsize(8)
 
-    # moved to update_time_table() #
-
-    # time_table = subplot.table(
-    #     cellText= [['time', '%d' % i]],
-    #     bbox=[.25, .9, .5, row_height],    # x0, y0, width, height
-    #     animated=True,
-    # )
-    # time_table.auto_set_font_size(False)
-    # time_table.set_fontsize(8)
-
     param_data = np.array([[key, parameter_set[key]] for key in parameter_set.keys()])
     num_rows = len(param_data)
     h = num_rows * row_height
@@ -200,21 +204,24 @@ def add_title(subplot, title_block_info, i):
 
     return title_table, param_table   # for init()
 
-def get_simplex_color(scheme, birth_time, current_birth_time, max_birth_time):
-    """helper for plot_complex()"""
-    if scheme == 'none':
-        color = (.4, .6, .8)
-    elif scheme == 'highlight new':
-        color = (1, 0, 0) if birth_time == current_birth_time - 1 else (0, 0, 1)
-    elif scheme == 'birth_time gradient':
-        prog = birth_time / float(max_birth_time)
-        color = (0, prog, 1 - prog)
-    else:
-        print 'error:', scheme, 'is not a valid color scheme'
-    return color
+
+def update_time_table(time_plot, i):
+
+    time_table = time_plot.table(
+        cellText= [['time', '%d' % i]],
+        bbox=[.375, .8, .25, .05],    # x0, y0, width, height
+        colWidths=[1, .5],
+        cellLoc = 'center',
+
+        animated=True,
+    )
+    time_table.auto_set_font_size(False)
+    time_table.set_fontsize(8)
+
+    return time_table,
 
 
-def make_frames_3D(subplot, birth_time, filt_data, color_scheme, alpha, camera_angle, hide_1simplexes):
+def make_frames_3D(filt_data, title_block_info, color_scheme, alpha, camera_angle, hide_1simplexes):
 
     def plot_witnesses(witness_data):
         x = witness_data[:, 0]
@@ -260,19 +267,42 @@ def make_frames_3D(subplot, birth_time, filt_data, color_scheme, alpha, camera_a
 
     if sys.platform == 'win32':
         mlab.options.offscreen = True
-    mlab.figure(bgcolor=(1, 1, 1), size=(1000, 1000))
-    mlab.view(azimuth=camera_angle[0], elevation=camera_angle[1],focalpoint='auto', distance='auto')
 
-    plot_witnesses(filt_data[0])
-    plot_landmarks(filt_data[1])
-    plot_complex(filt_data[2], birth_time, filt_data[1])
+    def make_frame(filt_plot, title_plot,birth_time):
+        mlab.figure(bgcolor=(1, 1, 1), size=(1000, 1000))
+        mlab.view(azimuth=camera_angle[0], elevation=camera_angle[1],focalpoint='auto', distance='auto')
 
-    filt_plot = mlab.screenshot(antialiased=True)
+        update_time_table(title_plot, i)
 
-    subplot.imshow(filt_plot, aspect='auto')
-    subplot.xaxis.set_ticks([])
-    subplot.yaxis.set_ticks([])
-    mlab.close()
+        plot_witnesses(filt_data[0])
+        plot_landmarks(filt_data[1])
+        plot_complex(filt_data[2], birth_time, filt_data[1])
+
+        mlab.savefig(filename='frames/sub_img%03d.png' % i)
+        screenshot = mlab.screenshot()
+
+        filt_plot.imshow(screenshot)
+        filt_plot.xaxis.set_ticks([])
+        filt_plot.yaxis.set_ticks([])
+
+        mlab.close()
+
+
+    filt_data[2] = unpack_complex_data_3D(filt_data[2])
+
+    title_plot = pyplot.subplot2grid((3, 4), (0, 0), rowspan=3, colspan=1)
+    add_title(title_plot, title_block_info, 0)
+
+    filt_plot = pyplot.subplot2grid((3, 4), (0, 1), rowspan=3, colspan=3)
+    filt_plot.set_aspect('equal')
+
+    for i in xrange(len(filt_data[2][1])):
+        make_frame(filt_plot,title_plot, i)
+        pyplot.savefig('frames/image%03d.png' % i)    # for debugging
+
+
+
+
 
 def make_frames_2D(filt_data, title_block_info, color_scheme, alpha, framerate):
     def plot_witnesses(subplot, attractor_data):
@@ -310,21 +340,6 @@ def make_frames_2D(filt_data, title_block_info, color_scheme, alpha, framerate):
 
         return coll,
 
-    def update_time_table(time_plot, i):
-
-        time_table = time_plot.table(
-            cellText= [['time', '%d' % i]],
-            bbox=[.375, .8, .25, .05],    # x0, y0, width, height
-            colWidths=[1, .5],
-            cellLoc = 'center',
-
-            animated=True,
-        )
-        time_table.auto_set_font_size(False)
-        time_table.set_fontsize(8)
-
-        return time_table,
-
 
     filt_data[2] = unpack_complex_data_2D(filt_data[2], filt_data[1])
 
@@ -355,10 +370,9 @@ def make_frames_2D(filt_data, title_block_info, color_scheme, alpha, framerate):
         ret_title = update_time_table(title_block, i)
         ret_list = list(ret_comp)
         ret_list.extend(ret_title)
-        # pyplot.savefig('frames/image%03d.png' % i)    # for debugging
+        pyplot.savefig('frames/image%03d.png' % i)    # for debugging
 
         return ret_list
-
 
     return init, animate
 
@@ -371,25 +385,29 @@ def make_movie(out_file_name, title_block_info, color_scheme, alpha, dpi, framer
 
     if ambient_dim == 2:
         init, animate = make_frames_2D(filt_data, title_block_info, color_scheme, alpha, framerate)
+        ani = animation.FuncAnimation(fig, animate, init_func=init, frames=len(filt_data[2]), blit=True, repeat=False)
+
+        ani.save('output/temp.mp4', fps=10)
+
+        os.chdir('output')
+
+        subprocess.call(['ffmpeg', '-y', '-i', 'temp.mp4', '-filter:v', 'setpts={:d}*PTS'.format(int(10 / framerate)),
+                         out_file_name])
+        subprocess.call(['rm', 'temp.mp4'])
+
+        os.chdir('..')
+
 
     elif ambient_dim == 3:
-        print "ERROR: 3D filtration is not supported at this time"
+        make_frames_3D(filt_data, title_block_info, color_scheme, alpha, camera_angle, hide_1simplexes)
 
     else:
         print "ERROR: ambient_dim = {:d}. Check input filtration file."
         sys.exit()
 
 
-    ani = animation.FuncAnimation(fig, animate, init_func=init, frames=len(filt_data[2]), blit=True, repeat=False)
 
-    ani.save('output/temp.mp4', fps=10)
 
-    os.chdir('output')
-
-    subprocess.call(['ffmpeg', '-y', '-i', 'temp.mp4', '-filter:v', 'setpts={:d}*PTS'.format(int(10 / framerate)), out_file_name])
-    subprocess.call(['rm', 'temp.mp4'])
-
-    os.chdir('..')
 
 
 

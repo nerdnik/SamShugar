@@ -88,7 +88,6 @@ def add_persistence_plot(subplot, num_div):
     birth_t, death_t = np.loadtxt('perseus_out_1.txt', unpack=True)
     lim = num_div + 1
 
-    immortal_holes = [birth_t[i] for i, death_time in enumerate(death_t) if death_time == -1]
     subplot.set_aspect('equal')
 
     subplot.set_xlim(0, lim)
@@ -99,12 +98,23 @@ def add_persistence_plot(subplot, num_div):
 
 
     subplot.plot([0, lim], [0, lim], color='k') # diagonal line
+
+    immortal_holes = [birth_t[i] for i, death_time in enumerate(death_t) if death_time == -1]
     for bt in immortal_holes:
         # subplot.plot((bt, bt), (bt, lim), '--', color='k', lw=1, zorder=0)    # immortal holes
         subplot.plot(bt, lim, 'x', color='b', markersize=10)
 
 
-    subplot.scatter(birth_t, death_t)   # doomed holes
+
+    count = np.zeros(len(birth_t))
+    for i, pt in enumerate(zip(birth_t, death_t)):
+        for scanner_pt in zip(birth_t, death_t):
+            if pt == scanner_pt:
+                count[i] += 1
+
+    subplot.scatter(birth_t, death_t, s=count)   # doomed holes
+
+
 
 
 def make_figure(title_block_info, out_file_name):

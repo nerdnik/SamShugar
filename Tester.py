@@ -1,8 +1,8 @@
 import sys
 from TestingFunctions import build_and_save_filtration, make_filtration_movie,make_persistence_diagram
 
-# test = 1
-test = int(sys.argv[1])
+test = 1
+# test = int(sys.argv[1])
 
 
 old_parameter_set = {
@@ -53,16 +53,16 @@ if test == 1:
     start_pt = 0   # skip first half of in data file (primitive sliding window)
     # build_and_save_filtration(in_data_file_name, build_filt_params, start=start_pt) # comment out to reuse filtration
 
-    make_filtration_movie(
-        in_data_file_name,              # used to check if saved filtration is up to date, and in titlebox
-        "L63_x_m2_tau7_movie.mp4",      		# output filename
-        build_filt_params,              # passed to BuildComplex.build_filtration()
-
-        # the following are optional plotting parameters and may be omitted
-        # see documentation at line 76 of TestingFunctions.py.
-        color_scheme='highlight new',
-        framerate=1,
-    )
+    # make_filtration_movie(
+    #     in_data_file_name,              # used to check if saved filtration is up to date, and in titlebox
+    #     "L63_x_m2_tau7_movie.mp4",      		# output filename
+    #     build_filt_params,              # passed to BuildComplex.build_filtration()
+    #
+    #     # the following are optional plotting parameters and may be omitted
+    #     # see documentation at line 76 of TestingFunctions.py.
+    #     color_scheme='highlight new',
+    #     framerate=1,
+    # )
 
     make_persistence_diagram(
         in_data_file_name,
@@ -77,12 +77,13 @@ if test == 2:
     build_filt_params = old_parameter_set
     build_filt_params.update(
         {
-            'ds_rate' : 200,
+            'ds_rate' : 50,
             'worm_length' : 5000,
-            'max_filtration_param': -20
+            'max_filtration_param': -10,
+            'num_divisions' : 10
         })
 
-    build_and_save_filtration(in_data_file_name, build_filt_params, start=0)
+    # build_and_save_filtration(in_data_file_name, build_filt_params, start=0)
 
     make_filtration_movie(
         in_data_file_name,
