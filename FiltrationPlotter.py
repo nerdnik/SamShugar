@@ -309,7 +309,7 @@ def make_frames_3D(filt_data, title_block_info, color_scheme, alpha, camera_angl
 
 
 
-def make_frames_2D(filt_data, title_block_info, color_scheme, alpha, framerate):
+def make_frames_2D(filt_data, title_block_info, color_scheme, alpha, frame_debug):
     def plot_witnesses(subplot, attractor_data):
         attractor_data = np.array(attractor_data)
         x = attractor_data[:, 0]
@@ -375,21 +375,22 @@ def make_frames_2D(filt_data, title_block_info, color_scheme, alpha, framerate):
         ret_title = update_time_table(title_block, i)
         ret_list = list(ret_comp)
         ret_list.extend(ret_title)
-        pyplot.savefig('frames/image%03d.png' % i)    # for debugging
+        if frame_debug:
+            pyplot.savefig('frames/image%03d.png' % i)    # for debugging
 
         return ret_list
 
     return init, animate
 
 
-def make_movie(out_file_name, title_block_info, color_scheme, alpha, dpi, framerate, camera_angle, hide_1simplexes):
+def make_movie(out_file_name, title_block_info, color_scheme, alpha, dpi, framerate, camera_angle, hide_1simplexes, frame_debug):
 
     remove_old_frames()
     ambient_dim, filt_data = load_data()
     fig = pyplot.figure(figsize=(9, 6), tight_layout=True, dpi=dpi)
 
     if ambient_dim == 2:
-        init, animate = make_frames_2D(filt_data, title_block_info, color_scheme, alpha, framerate)
+        init, animate = make_frames_2D(filt_data, title_block_info, color_scheme, alpha, frame_debug=frame_debug)
         FFwriter = animation.FFMpegWriter()
         ani = animation.FuncAnimation(fig, animate, init_func=init, frames=len(filt_data[2]), blit=True, repeat=False)
 

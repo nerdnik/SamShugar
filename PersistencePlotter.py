@@ -91,6 +91,9 @@ def add_persistence_plot(subplot, num_div):
     lim = np.max(epsilons)
 
     subplot.set_aspect('equal')
+    subplot.grid(which=u'both', zorder=0)
+    subplot.minorticks_on()
+
 
     subplot.set_xlim(0, lim)
     subplot.set_ylim(0, lim)
@@ -105,14 +108,15 @@ def add_persistence_plot(subplot, num_div):
     death_e = []
 
     for times in zip(birth_t, death_t):
-        birth_e.append(epsilons[int(times[0])])
-        death_e.append(epsilons[int(times[1])])
+        if times[1] != - 1:
+            birth_e.append(epsilons[int(times[0])])
+            death_e.append(epsilons[int(times[1])])
 
 
-    immortal_holes = [birth_e[i] for i, death_time in enumerate(death_t) if death_time == -1]
+    immortal_holes = [epsilons[int(birth_t[i])] for i, death_time in enumerate(death_t) if death_time == -1]
     for be in immortal_holes:
         # subplot.plot((bt, bt), (bt, lim), '--', color='k', lw=1, zorder=0)    # immortal holes
-        subplot.plot(be, lim, 'x', color='b', markersize=10)
+        subplot.plot(be, lim *.99, '^', color='C0', markersize=8)
 
 
 
@@ -123,7 +127,7 @@ def add_persistence_plot(subplot, num_div):
             if pt == scanner_pt:
                 count[i] += 1
 
-    subplot.scatter(birth_e, death_e, s=count)   # doomed holes
+    subplot.scatter(birth_e, death_e, s=(count * 5), zorder=1)   # doomed holes
 
 
 
