@@ -1,7 +1,9 @@
 import sys
 from TestingFunctions import build_and_save_filtration, make_filtration_movie,make_persistence_diagram
 
-test = 1
+from FiltrationPlotter import make_frame3D
+
+test = 2
 # test = int(sys.argv[1])
 
 
@@ -48,25 +50,26 @@ if test == 1:
             'worm_length' : 10000,
             'max_filtration_param': -10,
             'd_cov': 20,
+
         })
 
     start_pt = 0   # skip first half of in data file (primitive sliding window)
-    # build_and_save_filtration(in_data_file_name, build_filt_params, start=start_pt) # comment out to reuse filtration
+    build_and_save_filtration(in_data_file_name, build_filt_params, start=start_pt) # comment out to reuse filtration
 
-    # make_filtration_movie(
-    #     in_data_file_name,              # used to check if saved filtration is up to date, and in titlebox
-    #     "L63_x_m2_tau7_movie.mp4",      		# output filename
-    #     build_filt_params,              # passed to BuildComplex.build_filtration()
-    #
-    #     # the following are optional plotting parameters and may be omitted
-    #     # see documentation at line 76 of TestingFunctions.py.
-    #     color_scheme='highlight new',
-    #     framerate=1,
-    # )
+    make_filtration_movie(
+        in_data_file_name,              # used to check if saved filtration is up to date, and in titlebox
+        "output/L63_x_m2_tau7_movie.mp4",      		# output filename
+        build_filt_params,              # passed to BuildComplex.build_filtration()
+
+        # the following are optional plotting parameters and may be omitted
+        # see documentation at line 76 of TestingFunctions.py.
+        color_scheme='highlight new',
+        framerate=1,
+    )
 
     make_persistence_diagram(
         in_data_file_name,
-        "L63_x_m2_tau7_persistence.png",
+        "output/L63_x_m2_tau7_persistence_new.png",
         build_filt_params
     )
 
@@ -77,29 +80,31 @@ if test == 2:
     build_filt_params = old_parameter_set
     build_filt_params.update(
         {
-            'ds_rate' : 50,
+            'ds_rate' : 20,
             'worm_length' : 5000,
             'max_filtration_param': -10,
-            'num_divisions' : 10
         })
 
     # build_and_save_filtration(in_data_file_name, build_filt_params, start=0)
 
-    make_filtration_movie(
-        in_data_file_name,
-        "3d_movie_test_start2.mp4",
-        build_filt_params,
-        color_scheme='none',
-        max_frames=30,
-        framerate=10,
-        hide_1simplexes=True
-    )
+    # make_persistence_diagram(
+    #     in_data_file_name,
+    #     "output/persistence_diagram_test.png",
+    #     build_filt_params
+    # )
+    #
+    # make_filtration_movie(
+    #     in_data_file_name,
+    #     "output/3d_movie_test_start.mp4",
+    #     build_filt_params,
+    #     color_scheme='none',
+    #     framerate=1,
+    #     hide_1simplexes=True,
+    #     camera_angle=[55, 135]
+    # )
 
-    make_persistence_diagram(
-        in_data_file_name,
-        "persistence_diagram_test.png",
-        build_filt_params
-    )
+    make_frame3D(5, hide_1simplexes=True, alpha=1)
+
 
 if test == 3:
     in_data_file_name = "datasets/L96N22F5_x1_m2tau10.txt"

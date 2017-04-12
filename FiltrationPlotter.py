@@ -5,7 +5,7 @@ from mayavi import mlab
 import numpy as np
 import itertools
 
-
+import TestingFunctions
 
 from matplotlib import collections
 import matplotlib.pyplot as pyplot
@@ -184,7 +184,7 @@ def add_title(subplot, title_block_info, i):
 
     title_table = subplot.table(
         cellText = [[in_file_name.split('/')[-1]],   # remove leading "datasets/"
-                    [out_file_name]],
+                    [out_file_name.split('/')[-1]]],
         bbox=[0, .9, 1, .05 * 2],    # x0, y0, width, height
         cellLoc='center'
     )
@@ -207,10 +207,12 @@ def add_title(subplot, title_block_info, i):
 
 def update_time_table(time_plot, i):
 
+    epsilons = np.loadtxt('filtration_data/epsilons.txt')
+    e = epsilons[i]
     time_table = time_plot.table(
-        cellText= [['time', '%d' % i]],
-        bbox=[.375, .8, .25, .05],    # x0, y0, width, height
-        colWidths=[1, .5],
+        cellText= [['$\epsilon$', '{:.3f}'.format(e)]],
+        bbox=[.25, .8, .5, .05],    # x0, y0, width, height
+        colWidths=[.5, 1],
         cellLoc = 'center',
 
         animated=True,
@@ -222,6 +224,8 @@ def update_time_table(time_plot, i):
 
 
 def make_frames_3D(filt_data, title_block_info, color_scheme, alpha, camera_angle, hide_1simplexes):
+    print 'WARNING: Ambient dimension 3 detected. This code needs work and may contain bugs.'
+    print 'TODO: Call via funcanimation() to improve performance, fix 1simplexes.\n'
 
     def plot_witnesses(witness_data):
         x = witness_data[:, 0]
@@ -265,11 +269,11 @@ def make_frames_3D(filt_data, title_block_info, color_scheme, alpha, camera_angl
 
             birth_time += 1
 
-    if sys.platform == 'win32':
+    if sys.platform != 'darwin':
         mlab.options.offscreen = True
 
     def make_frame(filt_plot, title_plot,birth_time):
-        mlab.figure(bgcolor=(1, 1, 1), size=(1000, 1000))
+        mlab.figure(bgcolor=(1, 1, 1), size=(800, 800))
         mlab.view(azimuth=camera_angle[0], elevation=camera_angle[1],focalpoint='auto', distance='auto')
 
         update_time_table(title_plot, i)
@@ -278,8 +282,8 @@ def make_frames_3D(filt_data, title_block_info, color_scheme, alpha, camera_angl
         plot_landmarks(filt_data[1])
         plot_complex(filt_data[2], birth_time, filt_data[1])
 
-        mlab.savefig(filename='frames/sub_img%03d.png' % i)
-        screenshot = mlab.screenshot()
+        # mlab.savefig(filename='frames/sub_img%03d.png' % i)
+        screenshot = mlab.screenshot(antialiased=True)
 
         filt_plot.imshow(screenshot)
         filt_plot.xaxis.set_ticks([])
@@ -297,8 +301,9 @@ def make_frames_3D(filt_data, title_block_info, color_scheme, alpha, camera_angl
     filt_plot.set_aspect('equal')
 
     for i in xrange(len(filt_data[2][1])):
+        print 'frame', i
         make_frame(filt_plot,title_plot, i)
-        pyplot.savefig('frames/image%03d.png' % i)    # for debugging
+        pyplot.savefig('frames/image%03d.png' % i)
 
 
 
@@ -385,22 +390,21 @@ def make_movie(out_file_name, title_block_info, color_scheme, alpha, dpi, framer
 
     if ambient_dim == 2:
         init, animate = make_frames_2D(filt_data, title_block_info, color_scheme, alpha, framerate)
+        FFwriter = animation.FFMpegWriter()
         ani = animation.FuncAnimation(fig, animate, init_func=init, frames=len(filt_data[2]), blit=True, repeat=False)
 
         ani.save('output/temp.mp4', fps=10)
 
-        os.chdir('output')
 
-        subprocess.call(['ffmpeg', '-y', '-i', 'temp.mp4', '-filter:v', 'setpts={:d}*PTS'.format(int(10 / framerate)),
+        subprocess.call(['ffmpeg', '-y', '-i', 'output/temp.mp4', '-filter:v', 'setpts={:d}*PTS'.format(int(10 / framerate)),
                          out_file_name])
-        subprocess.call(['rm', 'temp.mp4'])
+        subprocess.call(['rm', 'output/temp.mp4'])
 
-        os.chdir('..')
 
 
     elif ambient_dim == 3:
         make_frames_3D(filt_data, title_block_info, color_scheme, alpha, camera_angle, hide_1simplexes)
-
+        TestingFunctions.frames_to_movie(out_file_name, framerate)
     else:
         print "ERROR: ambient_dim = {:d}. Check input filtration file."
         sys.exit()
@@ -408,8 +412,84 @@ def make_movie(out_file_name, title_block_info, color_scheme, alpha, dpi, framer
 
 
 
+def make_frame3D(birth_time, camera_angle=(135, 55), hide_1simplexes=False, alpha=.7, color_scheme='none'):
+    ambient_dim, filt_data = load_data()
+
+    def get_simplex_color(scheme, birth_time, current_birth_time, max_birth_time):
+        """helper for plot_complex()"""
+        if scheme == 'none':
+            color = (.4, .6, .8)
+        elif scheme == 'highlight new':
+            color = (1, 0, 0) if birth_time == current_birth_time - 1 else (0, 0, 1)
+        elif scheme == 'birth_time gradient':
+            prog = birth_time / float(max_birth_time)
+            color = (0, prog, 1 - prog)
+        else:
+            print 'error:', scheme, 'is not a valid color scheme'
+        return color
+
+    def plot_witnesses(witness_data):
+        x = witness_data[:, 0]
+        y = witness_data[:, 1]
+        z = witness_data[:, 2]
+        s = np.ones(len(x)) * .005
+        # mlab.points3d(x, y, z, mode='point', color=(0, 0, 0))
+        mlab.points3d(x, y, z, s, mode='sphere', color=(0, 0, 0), scale_factor=1)
+
+
+    def plot_landmarks(landmark_data):
+        x = landmark_data[:, 0]
+        y = landmark_data[:, 1]
+        z = landmark_data[:, 2]
+        mlab.points3d(x, y, z, scale_factor=.02, color=(0, 0, 1))
+
+    def plot_complex(complex_data, current_birth_time, landmark_data):  # how to specify color per simplex??
+        """plots plots all simplices with birth time =< birth_time"""
+        max_birth_time = len(complex_data) - 1
+        birth_time = 0
+        while birth_time < current_birth_time:
+            # color = get_simplex_color_3D(color_scheme, birth_time, current_birth_time, max_birth_time, landmark_data)
+            # color = ((<float> for id in triangle_ID) for triangle_ID in triangle_IDs)
+            # then, in triangular_mesh(...., scalers=color)
+
+            color = get_simplex_color(color_scheme, birth_time, current_birth_time, max_birth_time)
+
+            triangle_IDs =  complex_data[1][birth_time]
+            x = landmark_data[:, 0]
+            y = landmark_data[:, 1]
+            z = landmark_data[:, 2]
+
+
+            mlab.triangular_mesh(x, y, z, triangle_IDs, color=color, opacity=alpha, representation='surface')
+            mlab.triangular_mesh(x, y, z, triangle_IDs, color=(0, 0, 0), representation='wireframe')
+
+            if hide_1simplexes == False:
+                lines = complex_data[0][birth_time]
+                for simplex_IDs in lines:
+                    ID_coords = np.array([landmark_data[simplex_IDs[0]], landmark_data[simplex_IDs[1]]])
+                    x = ID_coords[:, 0]
+                    y = ID_coords[:, 1]
+                    z = ID_coords[:, 2]
+                    mlab.plot3d(x, y, z, tube_radius=None, color=(0,0,0))
+                    # mlab.pipeline.line_source(x, y, z, figure=fig)
+
+            birth_time += 1
+
+    mlab.figure(bgcolor=(1, 1, 1), size=(1000, 1000))
+    mlab.view(azimuth=camera_angle[0], elevation=camera_angle[1], focalpoint='auto', distance='auto')
+
+
+    filt_data[2] = unpack_complex_data_3D(filt_data[2])
+
+    plot_witnesses(filt_data[0])
+    plot_landmarks(filt_data[1])
+    plot_complex(filt_data[2], birth_time, filt_data[1])
+
+    # mlab.savefig(filename='frames/sub_img%03d.png' % i)
+    mlab.show()
+
 
 
 
 if __name__ == '__main__':
-    pass
+    make_frames_3D().make

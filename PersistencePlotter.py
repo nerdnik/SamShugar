@@ -68,8 +68,6 @@ def add_title(subplot, title_block_info):
         [[key, parameter_set[key]] for key in parameter_set.keys()])
     param_table = subplot.table(
         cellText=param_data,
-        colLabels=('PARAM', 'VALUE'),
-        colColours=(['c', 'c']),
         colWidths=[1.5, .5],
         bbox=[0, 0, 1, .8],  # x0, y0, width, height
     )
@@ -78,15 +76,19 @@ def add_title(subplot, title_block_info):
 
     title_table = subplot.table(
         cellText = [[in_file_name.split('/')[-1]],   # remove leading "datasets/"
-                    [out_file_name]],
+                    [out_file_name.split('/')[-1]]],
         bbox=[0, .9, 1, .1],
-        fontsize=8,
     )
+    title_table.auto_set_font_size(False)
+    title_table.auto_set_font_size(8)
 
 def add_persistence_plot(subplot, num_div):
     print 'plotting persistence diagram...'
-    birth_t, death_t = np.loadtxt('perseus_out_1.txt', unpack=True)
-    lim = num_div + 1
+    birth_t, death_t = np.loadtxt('perseus/perseus_out_1.txt', unpack=True)
+
+    print os.getcwd()
+    epsilons = np.loadtxt('filtration_data/epsilons.txt')
+    lim = np.max(epsilons)
 
     subplot.set_aspect('equal')
 
@@ -99,10 +101,19 @@ def add_persistence_plot(subplot, num_div):
 
     subplot.plot([0, lim], [0, lim], color='k') # diagonal line
 
-    immortal_holes = [birth_t[i] for i, death_time in enumerate(death_t) if death_time == -1]
-    for bt in immortal_holes:
+    birth_e = []
+    death_e = []
+
+    for times in zip(birth_t, death_t):
+        birth_e.append(epsilons[int(times[0])])
+        death_e.append(epsilons[int(times[1])])
+
+
+    immortal_holes = [birth_e[i] for i, death_time in enumerate(death_t) if death_time == -1]
+    for be in immortal_holes:
         # subplot.plot((bt, bt), (bt, lim), '--', color='k', lw=1, zorder=0)    # immortal holes
-        subplot.plot(bt, lim, 'x', color='b', markersize=10)
+        subplot.plot(be, lim, 'x', color='b', markersize=10)
+
 
 
 
@@ -112,7 +123,7 @@ def add_persistence_plot(subplot, num_div):
             if pt == scanner_pt:
                 count[i] += 1
 
-    subplot.scatter(birth_t, death_t, s=count)   # doomed holes
+    subplot.scatter(birth_e, death_e, s=count)   # doomed holes
 
 
 
@@ -137,6 +148,8 @@ def make_figure(title_block_info, out_file_name):
     else:   # Windows
         subprocess.call("perseusWin.exe nmfsimtop perseus_in.txt perseus_out", shell=True)
 
+    os.chdir('..')
+
 
 
 
@@ -148,8 +161,7 @@ def make_figure(title_block_info, out_file_name):
 
     add_persistence_plot(pers_plot, num_divisions)
     add_title(title_block, title_block_info)
-    os.chdir('..')
-    pyplot.savefig('output/' + out_file_name)
+    pyplot.savefig(out_file_name)
     pyplot.clf()
 
 

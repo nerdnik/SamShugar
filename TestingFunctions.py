@@ -30,13 +30,9 @@ def build_and_save_filtration(in_file_name, params, start=0):
 def frames_to_movie(out_file_name, framerate):
     print 'building movie...'
 
+    in_str = ('ffmpeg -y -framerate %i ' % framerate) + '-i frames/image%03d.png'
+    out_str = (' -r %d ' % 24) + out_file_name
 
-    if platform == "linux" or platform == "linux2":
-        in_str =     in_str = ('./ffmpegLin -y -framerate %i ' % framerate) + '-i filtration_movie_frames/image%03d.png'
-    else:
-        in_str = ('ffmpeg -y -framerate %i ' % framerate) + '-i filtration_movie_frames/image%03d.png'
-
-    out_str = (' -r %d ' % 24) + 'output/' + out_file_name
     os.system(in_str + out_str)
     print os.getcwd() + ('\\' if os.name == 'nt' else '/') + out_file_name
 
@@ -75,7 +71,7 @@ def make_filtration_movie(
         out_file_name,
         parameter_set,
         color_scheme='none',    # as of now, 'none', 'highlight new', or 'birth_time gradient'
-        camera_angle=[135, 55], # for 3D mode. [azimuthal, elevation]
+        camera_angle=(135, 55), # for 3D mode. [azimuthal, elevation]
         alpha = 1,              # opacity (float, 0...1 : transparent...opaque)
         dpi=150,                # dots per inch (resolution)
         max_frames = None,      # cut off frame (for testing or when only interested in the beginning of a movie)
