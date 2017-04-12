@@ -73,10 +73,10 @@ def make_filtration_movie(
         color_scheme='none',    # as of now, 'none', 'highlight new', or 'birth_time gradient'
         camera_angle=(135, 55), # for 3D mode. [azimuthal, elevation]
         alpha = 1,              # opacity (float, 0...1 : transparent...opaque)
-        dpi=150,                # dots per inch (resolution)
+        dpi=150,                # dots   per inch (resolution)
         max_frames = None,      # cut off frame (for testing or when only interested in the beginning of a movie)
         hide_1simplexes=False,  # i need to find a way to optimize the plotting of 1-simplexes(lines) 3D plotting, as of now they slow mayavi significantly.
-        frame_debug=False,
+        frame_debug=False,      # save frames to /frames/ dir
         framerate=1             # number of frames per second. for a constant max_frames, higher framerate will make a shorter movie.
     ):
 

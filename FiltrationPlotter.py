@@ -486,7 +486,7 @@ def make_frame3D(birth_time, camera_angle=(135, 55), hide_1simplexes=False, alph
     plot_landmarks(filt_data[1])
     plot_complex(filt_data[2], birth_time, filt_data[1])
 
-    # mlab.savefig(filename='frames/sub_img%03d.png' % i)
+    # mlab.savefig(filename='frames/sub_img%03d.png' % i)   # for debugging
     mlab.show()
 
 
