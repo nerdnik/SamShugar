@@ -76,7 +76,7 @@ def make_filtration_movie(
         dpi=150,                # dots   per inch (resolution)
         max_frames = None,      # cut off frame (for testing or when only interested in the beginning of a movie)
         hide_1simplexes=False,  # i need to find a way to optimize the plotting of 1-simplexes(lines) 3D plotting, as of now they slow mayavi significantly.
-        frame_debug=False,      # save frames to /frames/ dir
+        save_frames=False,      # save frames to /frames/ dir
         framerate=1             # number of frames per second. for a constant max_frames, higher framerate will make a shorter movie.
     ):
 
@@ -84,7 +84,7 @@ def make_filtration_movie(
     check_overwrite(out_file_name)
     start_time = time.time()
     title_block_info = [in_file_name, out_file_name, parameter_set, color_scheme, camera_angle, alpha, dpi, max_frames, hide_1simplexes]
-    FiltrationPlotter.make_movie(out_file_name, title_block_info, color_scheme, alpha, dpi, framerate, camera_angle, hide_1simplexes, frame_debug)
+    FiltrationPlotter.make_movie(out_file_name, title_block_info, color_scheme, alpha, dpi, framerate, camera_angle, hide_1simplexes, save_frames)
     print("make_filtration_movie() time elapsed: %d seconds \n" % (time.time() - start_time))
 
 

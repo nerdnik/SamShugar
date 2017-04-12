@@ -391,8 +391,7 @@ def make_movie(out_file_name, title_block_info, color_scheme, alpha, dpi, framer
 
     if ambient_dim == 2:
         init, animate = make_frames_2D(filt_data, title_block_info, color_scheme, alpha, frame_debug=frame_debug)
-        FFwriter = animation.FFMpegWriter()
-        ani = animation.FuncAnimation(fig, animate, init_func=init, frames=len(filt_data[2]), blit=True, repeat=False)
+        ani = animation.FuncAnimation(fig, animate, init_func=init, frames=len(filt_data[2]) - 1, blit=True, repeat=False)
 
         ani.save('output/temp.mp4', fps=10)
 
@@ -493,4 +492,4 @@ def make_frame3D(birth_time, camera_angle=(135, 55), hide_1simplexes=False, alph
 
 
 if __name__ == '__main__':
-    make_frames_3D().make
+    pass
