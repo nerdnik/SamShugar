@@ -277,7 +277,7 @@ if test == 10:
         })
 
     start_pt = 0   # skip first half of in data file (primitive sliding window)
-    # build_and_save_filtration(in_data_file_name, build_filt_params, start=start_pt) # comment out to reuse filtration
+    build_and_save_filtration(in_data_file_name, build_filt_params, start=start_pt) # comment out to reuse filtration
 
     make_filtration_movie(
         in_data_file_name,
@@ -285,7 +285,7 @@ if test == 10:
         build_filt_params,
         color_scheme='highlight new',
         framerate=1,
-        save_frames=True
+        save_frames=False
     )
 
     make_persistence_diagram(

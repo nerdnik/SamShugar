@@ -1,7 +1,6 @@
 import os
 import sys
 import subprocess
-from mayavi import mlab
 import numpy as np
 import itertools
 
@@ -224,6 +223,7 @@ def update_time_table(time_plot, i):
 
 
 def make_frames_3D(filt_data, title_block_info, color_scheme, alpha, camera_angle, hide_1simplexes):
+    from mayavi import mlab
     print 'WARNING: Ambient dimension 3 detected. This code needs work and may contain bugs.'
     print 'TODO: Call via funcanimation() to improve performance, fix 1simplexes.\n'
 
