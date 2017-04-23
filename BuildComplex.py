@@ -55,6 +55,8 @@ standard_parameter_set = {
 def build_filtration(input_file_name, parameter_set = None, **overrides):
     num_threads = 2
     global d
+    d = []
+    
 
     def get_param(key):
         if overrides.has_key(key):
