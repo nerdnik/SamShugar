@@ -3,8 +3,8 @@ from TestingFunctions import build_and_save_filtration, make_filtration_movie,ma
 
 from FiltrationPlotter import make_frame3D
 
-test = 10
-# test = int(sys.argv[1])
+#test = 10
+test = int(sys.argv[1])
 
 
 old_parameter_set = {
@@ -293,5 +293,35 @@ if test == 10:
         "output/L63_x_m2_tau7_persistence.png",
         build_filt_params
     )
+    
+if test == 11:
+	for i in xrange(27):
+		in_data_file_name = "test_cases/viol/%s-viol.txt" % str(i+36)
+    	build_filt_params = old_parameter_set
+    	build_filt_params.update(
+      	  {
+            'ds_rate' : 50,
+            'worm_length' : 5000,
+            'max_filtration_param': -10,
+            'num_divisions' : 50,
+            'd_use_hamiltonian': -10,
+        	})
+        start_pt = 0   # skip first half of in data file (primitive sliding window)
+    	build_and_save_filtration(in_data_file_name, build_filt_params, start=start_pt) # comment out to reuse filtration
+
+    	make_filtration_movie(
+      	 	in_data_file_name,
+       	 	"output/%s-viol_movie.mp4"  % str(i+36),
+       		 build_filt_params,
+       	 	color_scheme='highlight new',
+        	framerate=1,
+       	 	save_frames=False
+    		)	
+
+    	make_persistence_diagram(
+        	in_data_file_name,
+        	"output/%s-viol_persistence_diagram.png" % str(i+36) ,
+        	build_filt_params
+    		)
 
 print 'test %d complete.' % test
