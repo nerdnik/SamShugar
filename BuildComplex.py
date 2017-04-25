@@ -363,7 +363,8 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
     for w in range(0,len(witnesses)):
         inputs.append(w)
         d[w].sort()
-    #p.map(sort,inputs)
+    p.map(sort,inputs)  # was commented out
+    p.terminate()       # added by Elliott 4/25
     sys.stdout.write("done\n")
     sys.stdout.flush()
     assert len(landmarks) == number_of_vertices

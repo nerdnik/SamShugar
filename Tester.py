@@ -396,3 +396,5 @@ if test == 13:
 
 
 print 'test %d complete.' % test
+
+exit(0)
