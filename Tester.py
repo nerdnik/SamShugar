@@ -385,7 +385,7 @@ if test == 13:
 		})
 
 	i_ref = 25
-	i_arr = np.arange(24,27, 1)
+	i_arr = np.arange(20, 30, 1)
 	dir = 'test_cases'
 	base_filename = 'L63_x_m2_tau'
 	PRF_dist_plots(dir, base_filename, i_ref, i_arr, params, rebuild_filt=True)
