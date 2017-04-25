@@ -373,6 +373,7 @@ if test == 12:
 			build_filt_params
 		)
 
+
 if test == 13:
 	params = old_parameter_set
 	# params = standard_parameter_set
@@ -388,6 +389,10 @@ if test == 13:
 	i_arr = np.arange(20, 30, 1)
 	dir = 'test_cases'
 	base_filename = 'L63_x_m2_tau'
-	PRF_dist_plots(dir, base_filename, i_ref, i_arr, params)
+	out_filename = 'output/distances.png'
+
+
+	PRF_dist_plots(dir, base_filename, out_filename, i_ref, i_arr, params)
+
 
 print 'test %d complete.' % test

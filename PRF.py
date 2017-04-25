@@ -58,16 +58,19 @@ def build_and_save_filtration(in_filename, params, start=0):
 	# witness_coords = filtration[1][1]
 	# landmark_coords = filtration[1][0]
 	complexes = sorted(list(filtration[0]))
-	np.save('filtration_data/complexes.npy', complexes)
+	# np.save('filtration_data/complexes.npy', complexes)
 
 	return complexes
 
 
 def get_interval_data():
 	""" formats perseus output """
-	birth_t, death_t = np.loadtxt('perseus/perseus_out_1.txt', unpack=True)
+	with open('perseus/perseus_out_1.txt', 'r') as f:
+		birth_t, death_t = np.loadtxt(f, unpack=True)
 
-	epsilons = np.loadtxt('filtration_data/epsilons.txt')
+
+	with open('filtration_data/epsilons.txt') as f:
+		epsilons = np.loadtxt(f)
 	lim = np.max(epsilons)
 
 	birth_e = []
@@ -105,14 +108,15 @@ def get_interval_data():
 
 
 	x, y, z = points[:,0], points[:,1], points[:,2]
+
 	return x, y, z, lim
 
 
 def get_homology(filt_list):
 	""" calls perseus """
 
-	if filt_list == 'read':
-		filt_list = np.load('filtration_data/complexes.npy')
+	# if filt_list == 'read':
+	# 	filt_list = np.load('filtration_data/complexes.npy')
 
 	def group_by_birth_time(complex_ID_list):
 		"""Reformats 1D list of SimplexBirth objects into 2D array of
@@ -225,15 +229,22 @@ def get_rank_func(filename, filt_params):
 	return build_rank_func(intervals)
 
 
-def PRF_dist_plots(dir, base_filename, i_ref, i_arr, filt_params, rebuild_filt=True):
+from pympler.tracker import SummaryTracker
+
+
+def PRF_dist_plots(dir, base_filename,out_filename, i_ref, i_arr, filt_params, rebuild_filt=True):
+	ref_func =[]
+	funcs = []
 	if rebuild_filt:
 		# filename = '{}/{}{}'.format(dir, i_ref, base_filename)
 		filename = '{}/{}{}.txt'.format(dir, base_filename, i_ref)
 
 		ref_func = get_rank_func(filename, filt_params)
 
-		funcs = []
 		for i in i_arr:
+
+			# tracker = SummaryTracker()
+
 			# filename = '{}/{}{}'.format(dir, i, base_filename)
 			filename = '{}/{}{}.txt'.format(dir, base_filename, i)
 
@@ -244,14 +255,20 @@ def PRF_dist_plots(dir, base_filename, i_ref, i_arr, filt_params, rebuild_filt=T
 			func = get_rank_func(filename, filt_params)
 			funcs.append(func)
 
+			# print 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+			# print 'get_rank_func() tracker:'
+			# print "::", filename, "::"
+			# tracker.print_diff()
+			# print 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+
 		funcs = np.array(funcs)
+		# np.save('MRFs.npy', funcs)
+		# np.save('MRF_ref.npy', ref_func)
 
-		np.save('MRFs.npy', funcs)
-		np.save('MRF_ref.npy', ref_func)
 
-
-	funcs = np.load('MRFs.npy')
-	ref_func = np.load('MRF_ref.npy')
+	if not rebuild_filt:
+		funcs = np.load('MRFs.npy')
+		ref_func = np.load('MRF_ref.npy')
 
 	box_area = (ref_func[3] / len(ref_func[2])) ** 2
 
@@ -268,7 +285,9 @@ def PRF_dist_plots(dir, base_filename, i_ref, i_arr, filt_params, rebuild_filt=T
 	ax.grid()
 	ax.set_ylim(bottom=0)
 	ax.set_title('reference tau: ' + str(i_ref))
-	plt.savefig('distances_L63.png')
+	plt.savefig(out_filename)
+	plt.close(fig)
+
 
 
 

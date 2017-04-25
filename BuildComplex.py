@@ -565,7 +565,10 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
             if done:
                 break
 
-    np.savetxt('filtration_data/epsilons.txt', epsilons)
+    with open('filtration_data/epsilons.txt', 'w') as f: # added by Elliott 4/25/17
+        np.savetxt(f, epsilons)
+    # np.savetxt('filtration_data/epsilons.txt', epsilons)
+
     extra_data = (landmarks, witnesses)
     if weak:
         max_epsilon = 0.0
