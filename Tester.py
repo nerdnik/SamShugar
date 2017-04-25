@@ -1,9 +1,12 @@
 import sys
+import numpy as np
 from TestingFunctions import build_and_save_filtration, make_filtration_movie,make_persistence_diagram
 
 from FiltrationPlotter import make_frame3D
 
-test = 11
+from PRF import PRF_dist_plots
+
+test = 13
 # test = int(sys.argv[1])
 
 
@@ -369,5 +372,22 @@ if test == 12:
 			"output/%s-viol_persistence_diagram.png" % str(i),
 			build_filt_params
 		)
+
+if test == 13:
+	params = old_parameter_set
+	# params = standard_parameter_set
+	params.update(
+		{
+			'ds_rate' : 50,
+			'worm_length' : 5000,
+			'max_filtration_param': -10,
+			'num_divisions' : 50
+		})
+
+	i_ref = 25
+	i_arr = np.arange(24,27, 1)
+	dir = 'test_cases'
+	base_filename = 'L63_x_m2_tau'
+	PRF_dist_plots(dir, base_filename, i_ref, i_arr, params, rebuild_filt=True)
 
 print 'test %d complete.' % test

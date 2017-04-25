@@ -768,6 +768,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 			fflush(stdout);
 		}
 		fclose(fp);
+//		free(closest);  // added by elliott 4/29
 	}
 
 
@@ -818,6 +819,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 	free(euc_distance);
 	free(landmarks);
 	free(cov_matrices);
+
 
 
 	printf("done\n");
