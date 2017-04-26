@@ -356,15 +356,19 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 
     sys.stdout.write("Sorting distances...")
     sys.stdout.flush()
-    p=multiprocessing.Pool(processes=4)
+
+    # p=multiprocessing.Pool(processes=4)   # commented out by Elliott 4/25
 
 
     inputs=[]
     for w in range(0,len(witnesses)):
         inputs.append(w)
         d[w].sort()
-    p.map(sort,inputs)  # was commented out
-    p.terminate()       # added by Elliott 4/25
+
+    # p.map(sort,inputs)  # was commented out as of 4/25
+
+    # p.terminate()       # added by Elliott 4/25
+
     sys.stdout.write("done\n")
     sys.stdout.flush()
     assert len(landmarks) == number_of_vertices
@@ -566,9 +570,8 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
             if done:
                 break
 
-    with open('filtration_data/epsilons.txt', 'w') as f: # added by Elliott 4/25/17
-        np.savetxt(f, epsilons)
-    # np.savetxt('filtration_data/epsilons.txt', epsilons)
+
+    np.savetxt('filtration_data/epsilons.txt', epsilons)
 
     extra_data = (landmarks, witnesses)
     if weak:

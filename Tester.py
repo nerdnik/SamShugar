@@ -382,19 +382,16 @@ if test == 13:
 			'ds_rate' : 50,
 			'worm_length' : 5000,
 			'max_filtration_param': -10,
-			'num_divisions' : 50
+			'num_divisions' : 50,
 		})
 
-	i_ref = 25
-	i_arr = np.arange(20, 30, 1)
+	i_ref = 35
+	i_arr = np.arange(30, 40, 1)
 	dir = 'test_cases'
 	base_filename = 'L63_x_m2_tau'
-	out_filename = 'output/distances.png'
-
+	out_filename = 'output/distances2.png'
 
 	PRF_dist_plots(dir, base_filename, out_filename, i_ref, i_arr, params)
 
 
 print 'test %d complete.' % test
-
-exit(0)

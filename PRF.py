@@ -229,8 +229,6 @@ def get_rank_func(filename, filt_params):
 	return build_rank_func(intervals)
 
 
-from pympler.tracker import SummaryTracker
-
 
 def PRF_dist_plots(dir, base_filename,out_filename, i_ref, i_arr, filt_params, rebuild_filt=True):
 	ref_func =[]
@@ -243,8 +241,6 @@ def PRF_dist_plots(dir, base_filename,out_filename, i_ref, i_arr, filt_params, r
 
 		for i in i_arr:
 
-			# tracker = SummaryTracker()
-
 			# filename = '{}/{}{}'.format(dir, i, base_filename)
 			filename = '{}/{}{}.txt'.format(dir, base_filename, i)
 
@@ -255,20 +251,13 @@ def PRF_dist_plots(dir, base_filename,out_filename, i_ref, i_arr, filt_params, r
 			func = get_rank_func(filename, filt_params)
 			funcs.append(func)
 
-			# print 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-			# print 'get_rank_func() tracker:'
-			# print "::", filename, "::"
-			# tracker.print_diff()
-			# print 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-
 		funcs = np.array(funcs)
-		# np.save('MRFs.npy', funcs)
-		# np.save('MRF_ref.npy', ref_func)
+		np.save('MRFs.npy', funcs)
+		np.save('MRF_ref.npy', ref_func)
 
 
-	if not rebuild_filt:
-		funcs = np.load('MRFs.npy')
-		ref_func = np.load('MRF_ref.npy')
+	funcs = np.load('MRFs.npy')
+	ref_func = np.load('MRF_ref.npy')
 
 	box_area = (ref_func[3] / len(ref_func[2])) ** 2
 
