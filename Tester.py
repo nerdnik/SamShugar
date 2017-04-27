@@ -4,9 +4,9 @@ from TestingFunctions import build_and_save_filtration, make_filtration_movie,ma
 
 from FiltrationPlotter import make_frame3D
 
-from PRF import PRF_dist_plots
+from PRF import PRF_dist_plots, mean_PRF_dist_plots
 
-test = 13
+test = 14
 # test = int(sys.argv[1])
 
 
@@ -386,12 +386,40 @@ if test == 13:
 		})
 
 	i_ref = 35
-	i_arr = np.arange(30, 40, 1)
+	i_arr = np.arange(20, 40, 2)
 	dir = 'test_cases'
 	base_filename = 'L63_x_m2_tau'
 	out_filename = 'output/distances2.png'
 
 	PRF_dist_plots(dir, base_filename, out_filename, i_ref, i_arr, params)
 
+
+if test == 14:
+	params = old_parameter_set
+	# params = standard_parameter_set
+	params.update(
+		{
+			'ds_rate' : 50,
+			'worm_length' : 5000,
+			'max_filtration_param': -10,
+			'num_divisions' : 50
+		})
+
+
+	mean_PRF_dist_plots(
+		'test_cases/viol/36-viol.txt',
+		'test_cases/C134C/36-C134C.txt',
+		'dist_test_left.png',
+		params,
+		mean_from='left'
+	)
+
+	mean_PRF_dist_plots(
+		'test_cases/viol/36-viol.txt',
+		'test_cases/C134C/36-C134C.txt',
+		'dist_test_right.png',
+		params,
+		mean_from='right'
+	)
 
 print 'test %d complete.' % test

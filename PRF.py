@@ -49,7 +49,7 @@ old_parameter_set = {
 	"graph_induced": False    # Use graph induced complex to build filtration.
 }
 
-def build_and_save_filtration(in_filename, params, start=0):
+def get_filtration(in_filename, params, start=0):
 	# lines = open(in_filename).readlines()
 
 
@@ -65,25 +65,25 @@ def build_and_save_filtration(in_filename, params, start=0):
 
 def get_interval_data():
 	""" formats perseus output """
-	with open('perseus/perseus_out_1.txt', 'r') as f:
-		birth_t, death_t = np.loadtxt(f, unpack=True)
+	birth_t, death_t = np.loadtxt('perseus/perseus_out_1.txt', unpack=True, ndmin=1)
 
 
-	with open('filtration_data/epsilons.txt') as f:
-		epsilons = np.loadtxt(f)
+
+	epsilons = np.loadtxt('filtration_data/epsilons.txt')
 	lim = np.max(epsilons)
 
 	birth_e = []
 	death_e = []
 
-	for times in zip(birth_t, death_t):
+	timess = np.vstack([birth_t, death_t]).T
+	for times in timess:
 		if times[1] != - 1:
 			birth_e.append(epsilons[int(times[0])])
 			death_e.append(epsilons[int(times[1])])
 
 
 	immortal_holes = []
-	for i, death_time in enumerate(death_t):    # place immortal holes at [birth time, time lim]
+	for i, death_time in np.ndenumerate(death_t):    # place immortal holes at [birth time, time lim]
 		if death_time == -1:
 			immortal_holes.append([epsilons[int(birth_t[i])], lim * .95])
 	immortal_holes = np.array(immortal_holes)
@@ -93,7 +93,11 @@ def get_interval_data():
 		death_e.extend(immortal_holes[:,1])
 
 
-	count = np.zeros(len(birth_t))
+
+	try:
+		count = np.zeros(len(birth_t))
+	except TypeError:
+		count = [0]
 	for i, pt in enumerate(zip(birth_e, death_e)):
 		for scanner_pt in zip(birth_e, death_e):
 			if pt == scanner_pt:
@@ -223,48 +227,13 @@ def build_rank_func(data):
 
 
 def get_rank_func(filename, filt_params):
-	filt = build_and_save_filtration(filename, filt_params)
+	filt = get_filtration(filename, filt_params)
 	get_homology(filt)
 	intervals = get_interval_data()
 	return build_rank_func(intervals)
 
 
-
-def PRF_dist_plots(dir, base_filename,out_filename, i_ref, i_arr, filt_params, rebuild_filt=True):
-	ref_func =[]
-	funcs = []
-	if rebuild_filt:
-		# filename = '{}/{}{}'.format(dir, i_ref, base_filename)
-		filename = '{}/{}{}.txt'.format(dir, base_filename, i_ref)
-
-		ref_func = get_rank_func(filename, filt_params)
-
-		for i in i_arr:
-
-			# filename = '{}/{}{}'.format(dir, i, base_filename)
-			filename = '{}/{}{}.txt'.format(dir, base_filename, i)
-
-			print '\n============================================='
-			print '*', filename
-			print '=============================================\n'
-
-			func = get_rank_func(filename, filt_params)
-			funcs.append(func)
-
-		funcs = np.array(funcs)
-		np.save('MRFs.npy', funcs)
-		np.save('MRF_ref.npy', ref_func)
-
-
-	funcs = np.load('MRFs.npy')
-	ref_func = np.load('MRF_ref.npy')
-
-	box_area = (ref_func[3] / len(ref_func[2])) ** 2
-
-	diffs = np.array([np.subtract(func[2], ref_func[2]) for func in funcs])
-
-	dists = np.array([np.abs(np.nansum(diff)) * box_area  for diff in diffs])
-
+def plot_dists(i_ref, i_arr, dists, out_filename):
 	fig = plt.figure(figsize=(10, 5))
 	ax = fig.add_subplot(111)
 	ax.plot(i_arr, dists)
@@ -278,7 +247,147 @@ def PRF_dist_plots(dir, base_filename,out_filename, i_ref, i_arr, filt_params, r
 	plt.close(fig)
 
 
+def PRF_dist_plots(dir, base_filename,out_filename, i_ref, i_arr, filt_params, rebuild_filt=True):
+	if rebuild_filt:
+		# filename = '{}/{}{}'.format(dir, i_ref, base_filename)
+		filename = '{}/{}{}.txt'.format(dir, base_filename, i_ref)
+		ref_func = get_rank_func(filename, filt_params)
+		funcs = []
+		for i in i_arr:
+			# filename = '{}/{}{}'.format(dir, i, base_filename)
+			filename = '{}/{}{}.txt'.format(dir, base_filename, i)
+			print '\n============================================='
+			print '|', filename
+			print '=============================================\n'
+			func = get_rank_func(filename, filt_params)
+			funcs.append(func)
+		funcs = np.array(funcs)
+		np.save('PRFs.npy', funcs)
+		np.save('PRF_ref.npy', ref_func)
 
+	funcs = np.load('PRFs.npy')
+	ref_func = np.load('PRF_ref.npy')
+	box_area = (ref_func[3] / len(ref_func[2])) ** 2
+	diffs = np.array([np.subtract(func[2], ref_func[2]) for func in funcs])
+	dists = np.array([np.abs(np.nansum(diff)) * box_area  for diff in diffs])
+	plot_dists(i_ref, i_arr, dists, out_filename)
+
+
+def mean_PRF_dist_plots(
+		filename_1, filename_2,
+		out_filename,
+		filt_params,
+		crop=(.1, .4), 			# sec
+		window_size=.05,		# sec
+		num_windows=10,
+		mean_samp_num=5,
+		wav_samp_rate = 44100, 	# hz
+		rebuild_filt=False,
+		mean_from='left'
+		):
+
+	filt_params.update(
+		{
+			'worm_length' : np.floor(window_size * wav_samp_rate).astype(int)
+		}
+	)
+
+	print 'worm_length:', filt_params['worm_length']
+
+	crop_samp = np.floor(np.array(crop) * wav_samp_rate).astype(int)
+	window_size_samp = int(np.array(window_size) * wav_samp_rate)
+	# window_step_samp = int(window_step * wav_samp_rate)
+
+
+	if rebuild_filt:
+		print 'building funcs_1'
+		funcs_1 = []
+		worm_1 = np.loadtxt(filename_1)
+		print 'len pre crop:', len(worm_1)
+		# worm_1 = worm_1[crop_samp[0]:crop_samp[1]]
+		print 'post crop:', len(worm_1)
+		start_pts = np.floor(np.linspace(0, len(worm_1), num_windows, endpoint=False)).astype(int)
+		for i, pt in enumerate(start_pts[:-1]):
+			print '\n============================================='
+			print '+', filename_1, i, pt
+			print '=============================================\n'
+			window = worm_1[pt:pt + window_size_samp]
+			np.savetxt('temp_worm1.txt', window)
+			func = get_rank_func('temp_worm1.txt', filt_params)
+			funcs_1.append(func)
+
+
+		print 'building funcs_2'
+		funcs_2 = []
+		worm_2 = np.loadtxt(filename_2)
+		print 'len pre crop:', len(worm_2)
+		worm_2 = worm_2[crop_samp[0]:crop_samp[1]]
+		print 'post crop:', len(worm_2)
+		start_pts = np.floor(np.linspace(0, len(worm_2), num_windows, endpoint=False)).astype(int)
+		for i, pt in enumerate(start_pts[:-1]):
+			print '\n============================================='
+			print '+', filename_2, i, pt
+			print '=============================================\n'
+			window = worm_2[pt:pt + window_size_samp]
+			np.savetxt('temp_worm2.txt', window,)
+			func = get_rank_func('temp_worm2.txt', filt_params)
+			funcs_2.append(func)
+
+
+		np.save('funcs_1.npy', funcs_1)
+		np.save('funcs_2.npy', funcs_2)
+
+
+	funcs_1 = np.load('funcs_1.npy')
+	funcs_2 = np.load('funcs_2.npy')
+
+	mean_1_samps = funcs_1[::num_windows//mean_samp_num]
+	mean_2_samps = funcs_2[::num_windows//mean_samp_num]
+
+	funcs_1_avg = np.mean(mean_1_samps, axis=0)
+	funcs_2_avg = np.mean(mean_2_samps, axis=0)
+
+	funcs_avg = funcs_1_avg if mean_from == 'left' else funcs_2_avg
+
+	# box_area = (funcs_1_avg[3] / len(funcs_1_avg[2])) ** 2
+	box_area = 1
+
+	diffs1_vs_1 = np.array([np.subtract(func[2], funcs_avg[2]) for func in funcs_1])
+	dists1_vs_1 = np.array([np.abs(np.nansum(diff)) * box_area for diff in diffs1_vs_1])
+
+	diffs2_vs_1 = np.array([np.subtract(func[2], funcs_avg[2]) for func in funcs_2])
+	dists2_vs_1 = np.array([np.abs(np.nansum(diff)) * box_area for diff in diffs2_vs_1])
+
+
+
+	# x = np.concatenate([start_pts[:-1], start_pts[:-1] + start_pts[-2]])
+
+	def plot_dists(dists1, dists2, title):
+		fig = plt.figure(figsize=(10, 5))
+		ax1 = fig.add_subplot(121)
+		ax1.plot(dists1)
+		# ax.set_xlabel('start point (samples)')
+		# ax.set_ylabel('$distance \quad ({\epsilon}^2 \; \# \; holes)$')
+		# ax.xaxis.set_ticks(i_arr[::2])
+		ax1.grid()
+		ax1.set_ylim(bottom=0)
+
+		ax2 = fig.add_subplot(122, sharey=ax1)
+		ax2.plot(dists2)
+		ax2.grid()
+		plt.setp(ax2.get_yticklabels(), visible=False)
+
+		ax1.set_title (filename_1.split('/')[-1])
+		ax2.set_title (filename_2.split('/')[-1])
+
+		fig.suptitle(title)
+
+		plt.savefig(out_filename)
+
+
+		plt.close(fig)
+
+	plot_dists(dists1_vs_1, dists2_vs_1, 'ref mean: ' + mean_from)
 
 def see(filename, filt_params):
 
